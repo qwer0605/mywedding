@@ -88,10 +88,35 @@ App.Vendor = (() => {
       </div>`;
   }
 
+  function calcCostTotal(v) {
+    const items = v.costItems || [];
+    return items.reduce((sum, i) => sum + (i.amount || 0), 0);
+  }
+
+  function fmtWon(n) {
+    if (!n) return '—';
+    if (n >= 100000000) return (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억 원';
+    if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만 원';
+    return n.toLocaleString() + '원';
+  }
+
   function renderCard(v) {
     const s = STATUS_MAP[v.status] || STATUS_MAP.review;
     const allPhotos = [...(v.portfolio || []), ...(v.docs || [])];
     const thumbs = allPhotos.slice(0, 3);
+    const costItems = v.costItems || [];
+    const total = calcCostTotal(v);
+    const includedTotal = costItems.filter(i => i.type === 'included').reduce((s, i) => s + i.amount, 0);
+
+    // 비용 항목이 있으면 합산, 없으면 텍스트 가격 표시
+    const priceDisplay = costItems.length > 0
+      ? `<div class="vendor-price">${fmtWon(total)}
+           <span style="font-size:12px;font-weight:400;color:var(--text-sub)">
+             (포함 ${fmtWon(includedTotal)} · ${costItems.length}개 항목)
+           </span>
+         </div>`
+      : `<div class="vendor-price">${esc(v.price) || '<span style="color:var(--text-sub);font-size:14px;font-weight:400">금액 미입력</span>'}</div>`;
+
     return `
       <div class="vendor-card" onclick="App.Vendor.openDetail('${v.id}')">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
@@ -99,7 +124,7 @@ App.Vendor = (() => {
           <span class="vendor-status ${s.cls}">${s.label}</span>
         </div>
         <div class="vendor-name">${esc(v.name)}</div>
-        <div class="vendor-price">${esc(v.price) || '<span style="color:var(--text-sub);font-size:14px;font-weight:400">금액 미입력</span>'}</div>
+        ${priceDisplay}
         <div class="vendor-tags">${(v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
         <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">
           ${v.contact ? '📞 ' + esc(v.contact) : ''}
@@ -245,6 +270,16 @@ App.Vendor = (() => {
 
         <div class="modal-section">
           <div class="modal-section-title">
+            💰 비용 내역
+            <button class="btn btn-outline btn-sm" onclick="App.Vendor.openAddCostItem('${v.id}')">+ 항목 추가</button>
+          </div>
+          <div id="costItems-${v.id}">
+            ${renderCostItems(v)}
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">
             포트폴리오 사진
             <label class="btn btn-outline btn-sm" style="cursor:pointer">
               + 사진 추가
@@ -275,6 +310,150 @@ App.Vendor = (() => {
           <button class="btn btn-sm btn-danger" onclick="App.Vendor.deleteVendor('${v.id}')">업체 삭제</button>
         </div>`
     });
+  }
+
+  // ── 비용 내역 렌더 ──
+  function renderCostItems(v) {
+    const items = v.costItems || [];
+    if (items.length === 0) {
+      return `<div class="cost-empty">항목이 없습니다. + 항목 추가를 눌러 비용을 입력하세요.</div>`;
+    }
+
+    const included = items.filter(i => i.type === 'included');
+    const extra    = items.filter(i => i.type === 'extra');
+    const includedSum = included.reduce((s, i) => s + i.amount, 0);
+    const extraSum    = extra.reduce((s, i) => s + i.amount, 0);
+    const total = includedSum + extraSum;
+
+    return `
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th style="text-align:right">금액</th>
+            <th>구분</th>
+            <th>메모</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(ci => `
+            <tr class="cost-row" id="ci-${ci.id}">
+              <td><strong>${esc(ci.name)}</strong></td>
+              <td style="text-align:right;font-weight:600">${fmtWon(ci.amount)}</td>
+              <td><span class="cost-type-${ci.type}">${ci.type === 'included' ? '✓ 포함' : '+ 추가옵션'}</span></td>
+              <td style="font-size:12px;color:var(--text-sub)">${esc(ci.memo)}</td>
+              <td style="display:flex;gap:2px">
+                <button class="task-btn" onclick="App.Vendor.openEditCostItem('${v.id}','${ci.id}')">✏️</button>
+                <button class="task-btn" onclick="App.Vendor.removeCostItem('${v.id}','${ci.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="cost-summary">
+        <div class="cost-summary-row">
+          <span>기본 포함 합계</span>
+          <span>${fmtWon(includedSum)}</span>
+        </div>
+        ${extraSum > 0 ? `<div class="cost-summary-row">
+          <span>추가 옵션 합계</span>
+          <span>${fmtWon(extraSum)}</span>
+        </div>` : ''}
+        <div class="cost-summary-total">
+          <span>전체 합계</span>
+          <span>${fmtWon(total)}</span>
+        </div>
+      </div>`;
+  }
+
+  function refreshCostItems(vendorId) {
+    const v = App.Data.getVendors().find(v => v.id === vendorId);
+    const el = document.getElementById(`costItems-${vendorId}`);
+    if (v && el) el.innerHTML = renderCostItems(v);
+    render(); // 카드 총액도 갱신
+  }
+
+  function openAddCostItem(vendorId) {
+    App.Modal.show({
+      title: '비용 항목 추가',
+      content: costItemForm(),
+      confirmText: '추가',
+      onConfirm: () => {
+        const item = readCostItemForm(); if (!item) return;
+        App.Data.addCostItem(vendorId, item);
+        App.Modal.hide();
+        refreshCostItems(vendorId);
+        // 상세 모달 다시 열기
+        openDetail(vendorId);
+      }
+    });
+  }
+
+  function openEditCostItem(vendorId, itemId) {
+    const v = App.Data.getVendors().find(v => v.id === vendorId);
+    const ci = v && (v.costItems || []).find(i => i.id === itemId);
+    if (!ci) return;
+    App.Modal.show({
+      title: '비용 항목 편집',
+      content: costItemForm(ci),
+      confirmText: '저장',
+      onConfirm: () => {
+        const item = readCostItemForm(); if (!item) return;
+        App.Data.updateCostItem(vendorId, itemId, item);
+        App.Modal.hide();
+        refreshCostItems(vendorId);
+        openDetail(vendorId);
+      }
+    });
+  }
+
+  function removeCostItem(vendorId, itemId) {
+    if (!confirm('이 항목을 삭제하시겠어요?')) return;
+    App.Data.deleteCostItem(vendorId, itemId);
+    refreshCostItems(vendorId);
+    openDetail(vendorId);
+  }
+
+  function costItemForm(ci) {
+    return `
+      <div class="form-group">
+        <label class="form-label">항목 이름 *</label>
+        <input class="form-input" id="ciName" value="${esc(ci?.name || '')}" placeholder="예: 기본 촬영, 야외 촬영">
+      </div>
+      <div class="form-group">
+        <label class="form-label">금액 (원)</label>
+        <input class="form-input" type="number" id="ciAmount" value="${ci?.amount || ''}" placeholder="예: 1000000">
+        <div style="font-size:12px;color:var(--text-sub);margin-top:4px">100만 원 → 1000000</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">구분</label>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+            <input type="radio" name="ciType" value="included" ${!ci || ci.type === 'included' ? 'checked' : ''}>
+            ✓ 기본 포함
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+            <input type="radio" name="ciType" value="extra" ${ci?.type === 'extra' ? 'checked' : ''}>
+            + 추가 옵션
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모 (선택)</label>
+        <input class="form-input" id="ciMemo" value="${esc(ci?.memo || '')}" placeholder="예: 인당 4만원, 10% 별도 등">
+      </div>`;
+  }
+
+  function readCostItemForm() {
+    const name = document.getElementById('ciName').value.trim();
+    if (!name) { alert('항목 이름을 입력해주세요.'); return null; }
+    const typeEl = document.querySelector('input[name="ciType"]:checked');
+    return {
+      name,
+      amount: Number(document.getElementById('ciAmount').value) || 0,
+      type: typeEl ? typeEl.value : 'included',
+      memo: document.getElementById('ciMemo').value.trim()
+    };
   }
 
   function renderPhotoGrid(photos, vendorId, type) {
@@ -416,6 +595,7 @@ App.Vendor = (() => {
     render, setCategory,
     openManageCategories, addCategory, promptRenameCategory, promptDeleteCategory,
     openAdd, openDetail, openEdit, deleteVendor,
+    openAddCostItem, openEditCostItem, removeCostItem,
     quickUpload, uploadPhoto, deletePhoto
   };
 })();

@@ -168,7 +168,7 @@ App.Data = (() => {
     const vendor = { id: generateId(), category: v.category || '', name: v.name || '',
       price: v.price || '', contact: v.contact || '', consultDate: v.consultDate || '',
       memo: v.memo || '', status: v.status || 'review', tags: v.tags || [],
-      portfolio: [], docs: [] };
+      portfolio: [], docs: [], costItems: [] };
     _data.vendors.push(vendor); save(); return vendor;
   }
 
@@ -185,6 +185,27 @@ App.Data = (() => {
     const p = { id: generateId(), name, data };
     (type === 'portfolio' ? v.portfolio : v.docs).push(p);
     save(); return p;
+  }
+
+  // Vendor Cost Items
+  function addCostItem(vendorId, item) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    if (!v) return;
+    if (!v.costItems) v.costItems = [];
+    const ci = { id: generateId(), name: item.name || '', amount: Number(item.amount) || 0,
+                 type: item.type || 'included', memo: item.memo || '' };
+    v.costItems.push(ci); save(); return ci;
+  }
+
+  function updateCostItem(vendorId, itemId, u) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    const ci = v && (v.costItems || []).find(i => i.id === itemId);
+    if (ci) Object.assign(ci, u); save();
+  }
+
+  function deleteCostItem(vendorId, itemId) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    if (v) { v.costItems = (v.costItems || []).filter(i => i.id !== itemId); save(); }
   }
 
   function deleteVendorPhoto(vendorId, type, photoId) {
@@ -275,6 +296,7 @@ App.Data = (() => {
     getStages, addStage, updateStage, deleteStage,
     addTask, updateTask, toggleTask, deleteTask,
     getVendors, addVendor, updateVendor, deleteVendor,
+    addCostItem, updateCostItem, deleteCostItem,
     addVendorPhoto, deleteVendorPhoto,
     getPhotos, addPhoto, updatePhoto, deletePhoto,
     getBudget, updateBudgetTotal, updateBudgetItem, addBudgetItem, deleteBudgetItem,

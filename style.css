@@ -230,6 +230,19 @@ select.form-input { cursor: pointer; }
 .mb-20 { margin-bottom: 20px; }
 .mb-28 { margin-bottom: 28px; }
 
+/* ── COST ITEMS ── */
+.cost-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 12px; }
+.cost-table th { background: var(--bg); padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--text-sub); text-align: left; border-bottom: 1px solid var(--border); }
+.cost-table td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #F8F4F0; }
+.cost-row:last-child td { border-bottom: none; }
+.cost-row:hover td { background: var(--bg); }
+.cost-type-included { background: #EDFAEC; color: var(--success); font-size: 11px; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+.cost-type-extra { background: #FFF8E6; color: var(--warning); font-size: 11px; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+.cost-summary { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+.cost-summary-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-sub); padding: 4px 0; }
+.cost-summary-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: var(--primary); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px; }
+.cost-empty { color: var(--text-sub); font-size: 13px; padding: 12px 0; }
+
 /* ── NAV USER ── */
 .nav-user { display: flex; align-items: center; gap: 8px; }
 .nav-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
