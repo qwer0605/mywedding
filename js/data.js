@@ -5,6 +5,7 @@ App.Data = (() => {
 
   const DEFAULT = {
     settings: { groomName: '', brideName: '', weddingDate: '', weddingTime: '', venue: '' },
+    vendorCategories: ['예식장', '스튜디오', '드레스', '메이크업', '폐백·이바지', '기타'],
     timeline: [
       { id: 'stage-1', name: 'D-12개월 이상', period: '예산 협의 · 예식장 계약', order: 0, expanded: true,
         tasks: [
@@ -101,6 +102,21 @@ App.Data = (() => {
 
   // Settings
   function saveSettings(s) { Object.assign(get().settings, s); save(); }
+
+  // Vendor Categories
+  function getVendorCategories() { return get().vendorCategories || [...DEFAULT.vendorCategories]; }
+  function addVendorCategory(name) { const cats = getVendorCategories(); if (!cats.includes(name)) { cats.push(name); _data.vendorCategories = cats; save(); } }
+  function renameVendorCategory(oldName, newName) {
+    const cats = getVendorCategories(); const i = cats.indexOf(oldName); if (i < 0) return;
+    cats[i] = newName;
+    _data.vendors.forEach(v => { if (v.category === oldName) v.category = newName; });
+    _data.vendorCategories = cats; save();
+  }
+  function deleteVendorCategory(name) {
+    _data.vendorCategories = getVendorCategories().filter(c => c !== name);
+    _data.vendors.forEach(v => { if (v.category === name) v.category = '기타'; });
+    save();
+  }
 
   // Timeline
   function getStages() { return get().timeline; }
@@ -218,21 +234,21 @@ App.Data = (() => {
     return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
   }
 
-  // Image compression
+  // Image compression (500px, 40% quality ≈ 10-15KB per image)
   async function compressImage(file) {
     return new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          const MAX = 900;
+          const MAX = 500;
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round((MAX / w) * h); w = MAX; }
           if (h > MAX) { w = Math.round((MAX / h) * w); h = MAX; }
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
           c.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(c.toDataURL('image/jpeg', 0.72));
+          resolve(c.toDataURL('image/jpeg', 0.40));
         };
         img.src = e.target.result;
       };
@@ -240,14 +256,28 @@ App.Data = (() => {
     });
   }
 
+  // Cloud sync helpers (used by auth.js when Firebase is available)
+  function exportForCloud() {
+    const d = get();
+    return { settings: d.settings, timeline: d.timeline, vendors: d.vendors,
+             photos: d.photos, budget: d.budget, vendorCategories: d.vendorCategories || DEFAULT.vendorCategories };
+  }
+
+  function importFromCloud(cloudData) {
+    if (!cloudData) return;
+    _data = { ...JSON.parse(JSON.stringify(DEFAULT)), ...cloudData };
+    localStorage.setItem(KEY, JSON.stringify(_data));
+  }
+
   return {
     load, get, save, generateId, saveSettings,
+    getVendorCategories, addVendorCategory, renameVendorCategory, deleteVendorCategory,
     getStages, addStage, updateStage, deleteStage,
     addTask, updateTask, toggleTask, deleteTask,
     getVendors, addVendor, updateVendor, deleteVendor,
     addVendorPhoto, deleteVendorPhoto,
     getPhotos, addPhoto, updatePhoto, deletePhoto,
     getBudget, updateBudgetTotal, updateBudgetItem, addBudgetItem, deleteBudgetItem,
-    getProgress, compressImage
+    getProgress, compressImage, exportForCloud, importFromCloud
   };
 })();

@@ -107,13 +107,17 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Data save hook: 저장할 때마다 클라우드도 자동 동기화 ──
+const _origSave = App.Data.save.bind(App.Data);
+App.Data.save = function() { _origSave(); App.Auth.scheduleSync(); };
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   App.Data.load();
-  const { weddingDate } = App.Data.get().settings;
+  App.Auth.init();   // Firebase 초기화 (설정 없으면 무시됨)
 
+  const { weddingDate } = App.Data.get().settings;
   if (!weddingDate) {
-    // Show first-time setup
     document.getElementById('setupOverlay').classList.add('open');
     document.getElementById('setupStartBtn').onclick = () => {
       document.getElementById('setupOverlay').classList.remove('open');
@@ -121,6 +125,5 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Initial render
   App.Home.render();
 });

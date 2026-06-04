@@ -230,6 +230,15 @@ select.form-input { cursor: pointer; }
 .mb-20 { margin-bottom: 20px; }
 .mb-28 { margin-bottom: 28px; }
 
+/* ── NAV USER ── */
+.nav-user { display: flex; align-items: center; gap: 8px; }
+.nav-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.nav-username { font-size: 13px; font-weight: 500; color: var(--text-sub); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── CATEGORY MANAGE ── */
+.cat-manage-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px; margin-bottom: 4px; background: var(--bg); }
+.cat-manage-name { font-size: 14px; font-weight: 500; }
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .navbar { padding: 0 16px; }

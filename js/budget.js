@@ -55,7 +55,7 @@ App.Budget = (() => {
               return `
                 <tr onclick="App.Budget.openEditItem('${item.id}')" style="cursor:pointer">
                   <td><strong>${esc(item.name)}</strong></td>
-                  <td>${item.budget ? fmtWon(item.budget) : <span style="color:var(--text-sub)">미설정</span>}</td>
+                  <td>${item.budget ? fmtWon(item.budget) : '<span style="color:var(--text-sub)">미설정</span>'}</td>
                   <td class="${item.spent > 0 ? 'spent-amt' : 'remain-amt'}">${item.spent ? fmtWon(item.spent) : '—'}</td>
                   <td class="${overBudget ? 'danger-amt' : 'remain-amt'}">${item.budget ? fmtWon(Math.abs(itemRemain)) + (overBudget ? ' 초과' : '') : '—'}</td>
                   <td>
@@ -98,7 +98,7 @@ App.Budget = (() => {
         <div class="form-group">
           <label class="form-label">총 예산 (원)</label>
           <input class="form-input" type="number" id="budgetTotal" value="${total || ''}" placeholder="예: 50000000">
-          <div style="font-size:12px;color:var(--text-sub);margin-top:6px">예: 5천만 원 → 50000000</div>
+          <div style="font-size:12px;color:var(--text-sub);margin-top:6px">5천만 원 → 50000000</div>
         </div>`,
       onConfirm: () => {
         const v = Number(document.getElementById('budgetTotal').value);
@@ -114,12 +114,10 @@ App.Budget = (() => {
       content: budgetItemForm(),
       confirmText: '추가',
       onConfirm: () => {
-        const v = readItemForm();
-        if (!v) return;
+        const v = readItemForm(); if (!v) return;
         App.Data.addBudgetItem(v.name);
         const items = App.Data.getBudget().items;
-        const newItem = items[items.length - 1];
-        App.Data.updateBudgetItem(newItem.id, { budget: v.budget, spent: v.spent });
+        App.Data.updateBudgetItem(items[items.length - 1].id, { budget: v.budget, spent: v.spent });
         App.Modal.hide(); render();
       }
     });
@@ -133,8 +131,7 @@ App.Budget = (() => {
       content: budgetItemForm(item),
       confirmText: '저장',
       onConfirm: () => {
-        const v = readItemForm();
-        if (!v) return;
+        const v = readItemForm(); if (!v) return;
         App.Data.updateBudgetItem(id, v);
         App.Modal.hide(); render(); App.Home.render();
       }
@@ -144,8 +141,7 @@ App.Budget = (() => {
   function deleteItem(id) {
     const item = App.Data.getBudget().items.find(i => i.id === id);
     if (!confirm(`"${item?.name}" 항목을 삭제하시겠어요?`)) return;
-    App.Data.deleteBudgetItem(id);
-    render();
+    App.Data.deleteBudgetItem(id); render();
   }
 
   function budgetItemForm(item) {
@@ -174,8 +170,8 @@ App.Budget = (() => {
 
   function fmtWon(n) {
     if (!n && n !== 0) return '—';
-    if (n >= 100000000) return (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억';
-    if (n >= 10000) return Math.round(n / 10000) + '만 원';
+    if (n >= 100000000) return (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '억 원';
+    if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만 원';
     return n.toLocaleString() + '원';
   }
 

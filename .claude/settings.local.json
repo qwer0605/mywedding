@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\qwer0\\\\OneDrive\\\\바탕 화면\\\\Claude\\\\APP\\\\budget-app\\\\src\" -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\qwer0\\\\OneDrive\\\\바탕 화면\\\\Claude\\\\APP\\\\budget-app\\\\src\\\\\", \"src/\"\\) } | Sort-Object)",
+      "Bash(dir /b src\\\\pages)",
+      "Bash(dir /b src\\\\components)",
+      "Bash(npm run *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell(git config *)",
+      "Bash(npx skills *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\qwer0\\\\OneDrive\\\\바탕 화면\\\\Claude\\\\APP\\\\budget-app\\\\src\" -Recurse -Include \"*.ts\",\"*.tsx\")",
+      "Bash(Select-Object FullName)",
+      "Bash(grep -Hm1 ^description: 'C:\\\\Users\\\\qwer0\\\\OneDrive\\\\바탕 화면\\\\Claude\\\\APP\\\\budget-app/.claude/skills/*/SKILL.md')",
+      "Bash(curl -s http://localhost:5173)",
+      "PowerShell(New-Item *)",
+      "PowerShell(cd \"C:\\\\Users\\\\qwer0\\\\OneDrive\\\\바탕 화면\\\\Claude\\\\APP\\\\budget-app\"; Get-ChildItem -Force -Name | Where-Object { $_ -match '\\\\.github|deploy' }; Test-Path \".github\")",
+      "Skill(keybindings-help)",
+      "WebSearch",
+      "WebFetch(domain:1jeongg.github.io)",
+      "WebFetch(domain:gongysd.com)",
+      "WebFetch(domain:brunch.co.kr)",
+      "WebFetch(domain:www.moneytogether.co.kr)",
+      "WebFetch(domain:www.sculptrakorea.co.kr)",
+      "WebFetch(domain:whiteclover.io)",
+      "WebFetch(domain:www.hwst.co.kr)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(git *)"
+    ]
+  }
+}

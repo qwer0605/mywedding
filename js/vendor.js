@@ -1,33 +1,45 @@
 window.App = window.App || {};
 
 App.Vendor = (() => {
-  const CATEGORIES = ['전체', '예식장', '스튜디오', '드레스', '메이크업', '폐백·이바지', '기타'];
-  const STATUS_MAP = { review: { label: '🔍 검토중', cls: 's-review' }, done: { label: '✓ 계약완료', cls: 's-done' }, contact: { label: '📞 상담예정', cls: 's-contact' } };
+  const STATUS_MAP = {
+    review:  { label: '🔍 검토중',   cls: 's-review' },
+    done:    { label: '✓ 계약완료', cls: 's-done' },
+    contact: { label: '📞 상담예정', cls: 's-contact' }
+  };
   let activeCat = '전체';
+
+  function getCategories() { return ['전체', ...App.Data.getVendorCategories()]; }
 
   function render() {
     const vendors = App.Data.getVendors();
+    const cats = getCategories();
+    // activeCat이 삭제된 경우 '전체'로 초기화
+    if (!cats.includes(activeCat)) activeCat = '전체';
+
     const filtered = activeCat === '전체' ? vendors : vendors.filter(v => v.category === activeCat);
     const sameCat = activeCat !== '전체' && filtered.length >= 2;
 
     document.getElementById('vendorScreen').innerHTML = `
       <div class="page-header">
         <div class="page-title">업체 관리</div>
-        <button class="btn btn-primary btn-sm" onclick="App.Vendor.openAdd()">+ 업체 추가</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="App.Vendor.openManageCategories()">⚙️ 카테고리</button>
+          <button class="btn btn-primary btn-sm" onclick="App.Vendor.openAdd()">+ 업체 추가</button>
+        </div>
       </div>
 
       <div class="cat-tabs">
-        ${CATEGORIES.map(c => `<button class="cat-tab ${c === activeCat ? 'active' : ''}" onclick="App.Vendor.setCategory('${c}')">${c}</button>`).join('')}
+        ${cats.map(c => `<button class="cat-tab ${c === activeCat ? 'active' : ''}" onclick="App.Vendor.setCategory('${esc(c)}')">${esc(c)}</button>`).join('')}
       </div>
 
       ${sameCat ? renderCompare(filtered) : ''}
 
       <div class="section-label">
-        ${activeCat === '전체' ? '전체 업체 목록' : activeCat + ' 목록'}
+        ${activeCat === '전체' ? '전체 업체 목록' : esc(activeCat) + ' 목록'}
         <span style="font-size:13px;color:var(--text-sub);font-weight:400">${filtered.length}곳</span>
       </div>
       <div class="vendor-grid">
-        ${filtered.map(renderCard).join('')}
+        ${filtered.map(v => renderCard(v)).join('')}
         <button class="add-vendor-btn" onclick="App.Vendor.openAdd()">
           <span style="font-size:28px">＋</span>업체 추가
         </button>
@@ -44,7 +56,7 @@ App.Vendor = (() => {
     return `
       <div class="compare-wrap mb-28">
         <div class="section-label" style="padding:16px 16px 0">
-          ${activeCat} 견적 비교
+          ${esc(activeCat)} 견적 비교
           <span style="font-size:13px;color:var(--text-sub);font-weight:400">${vendors.length}곳</span>
         </div>
         <table class="compare-table">
@@ -78,8 +90,8 @@ App.Vendor = (() => {
 
   function renderCard(v) {
     const s = STATUS_MAP[v.status] || STATUS_MAP.review;
-    const photoCount = (v.portfolio || []).length + (v.docs || []).length;
-    const thumbs = [...(v.portfolio || []).slice(0, 2), ...(v.docs || []).slice(0, 1)];
+    const allPhotos = [...(v.portfolio || []), ...(v.docs || [])];
+    const thumbs = allPhotos.slice(0, 3);
     return `
       <div class="vendor-card" onclick="App.Vendor.openDetail('${v.id}')">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
@@ -87,22 +99,27 @@ App.Vendor = (() => {
           <span class="vendor-status ${s.cls}">${s.label}</span>
         </div>
         <div class="vendor-name">${esc(v.name)}</div>
-        <div class="vendor-price">${esc(v.price) || '금액 미입력'}</div>
-        <div class="vendor-tags">
-          ${(v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
-        </div>
+        <div class="vendor-price">${esc(v.price) || '<span style="color:var(--text-sub);font-size:14px;font-weight:400">금액 미입력</span>'}</div>
+        <div class="vendor-tags">${(v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
         <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">
           ${v.contact ? '📞 ' + esc(v.contact) : ''}
-          ${v.consultDate ? '📅 ' + esc(v.consultDate) : ''}
+          ${v.consultDate ? ' &nbsp;📅 ' + esc(v.consultDate) : ''}
         </div>
         <div class="vendor-photo-strip">
           <div class="vendor-photo-strip-label">
             사진·서류
-            <span onclick="event.stopPropagation();App.Vendor.openDetail('${v.id}')">${photoCount > 0 ? photoCount + '장' : '+ 추가'}</span>
+            <span>${allPhotos.length > 0 ? allPhotos.length + '장' : ''}</span>
           </div>
           <div class="vendor-photo-row">
-            ${thumbs.map(p => `<div class="vendor-thumb"><img src="${p.data}" style="width:100%;height:100%;object-fit:cover"></div>`).join('')}
-            <button class="vendor-thumb-add" onclick="event.stopPropagation();App.Vendor.openDetail('${v.id}')">＋</button>
+            ${thumbs.map(p => `
+              <div class="vendor-thumb">
+                <img src="${p.data}" style="width:100%;height:100%;object-fit:cover">
+              </div>`).join('')}
+            <label class="vendor-thumb-add" onclick="event.stopPropagation()" title="사진 추가">
+              ＋
+              <input type="file" accept="image/*" multiple style="display:none"
+                onchange="App.Vendor.quickUpload('${v.id}', this)">
+            </label>
           </div>
         </div>
       </div>`;
@@ -110,20 +127,95 @@ App.Vendor = (() => {
 
   function setCategory(cat) { activeCat = cat; render(); }
 
+  // ── 카테고리 관리 모달 ──
+  function openManageCategories() {
+    function catListHTML() {
+      const cats = App.Data.getVendorCategories();
+      return cats.map((c, i) => `
+        <div class="cat-manage-row" id="catrow-${i}">
+          <span class="cat-manage-name">${esc(c)}</span>
+          <div style="display:flex;gap:4px">
+            <button class="task-btn" onclick="App.Vendor.promptRenameCategory(${i})">✏️</button>
+            <button class="task-btn" onclick="App.Vendor.promptDeleteCategory(${i})" ${cats.length <= 1 ? 'disabled' : ''}>🗑️</button>
+          </div>
+        </div>`).join('');
+    }
+
+    App.Modal.show({
+      title: '⚙️ 카테고리 관리',
+      showConfirm: false,
+      content: `
+        <div id="catManageList" style="margin-bottom:16px">${catListHTML()}</div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="newCatInput" placeholder="새 카테고리 이름" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="App.Vendor.addCategory()">추가</button>
+        </div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn btn-ghost" onclick="App.Modal.hide()">닫기</button>
+        </div>`
+    });
+  }
+
+  function refreshCatManageList() {
+    const el = document.getElementById('catManageList');
+    if (!el) return;
+    const cats = App.Data.getVendorCategories();
+    el.innerHTML = cats.map((c, i) => `
+      <div class="cat-manage-row" id="catrow-${i}">
+        <span class="cat-manage-name">${esc(c)}</span>
+        <div style="display:flex;gap:4px">
+          <button class="task-btn" onclick="App.Vendor.promptRenameCategory(${i})">✏️</button>
+          <button class="task-btn" onclick="App.Vendor.promptDeleteCategory(${i})" ${cats.length <= 1 ? 'disabled' : ''}>🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function addCategory() {
+    const input = document.getElementById('newCatInput');
+    const name = input ? input.value.trim() : '';
+    if (!name) { alert('카테고리 이름을 입력해주세요.'); return; }
+    if (App.Data.getVendorCategories().includes(name)) { alert('이미 존재하는 카테고리입니다.'); return; }
+    App.Data.addVendorCategory(name);
+    if (input) input.value = '';
+    refreshCatManageList();
+    render();
+  }
+
+  function promptRenameCategory(idx) {
+    const cats = App.Data.getVendorCategories();
+    const oldName = cats[idx];
+    const newName = prompt(`카테고리 이름 변경\n현재: "${oldName}"`, oldName);
+    if (!newName || newName.trim() === oldName) return;
+    if (cats.includes(newName.trim())) { alert('이미 존재하는 카테고리입니다.'); return; }
+    App.Data.renameVendorCategory(oldName, newName.trim());
+    refreshCatManageList();
+    render();
+  }
+
+  function promptDeleteCategory(idx) {
+    const cats = App.Data.getVendorCategories();
+    const name = cats[idx];
+    if (!confirm(`"${name}" 카테고리를 삭제하시겠어요?\n해당 업체들은 '기타'로 이동됩니다.`)) return;
+    App.Data.deleteVendorCategory(name);
+    refreshCatManageList();
+    render();
+  }
+
+  // ── 업체 추가/편집 ──
   function openAdd() {
     App.Modal.show({
       title: '업체 추가',
       content: vendorForm(),
       confirmText: '추가',
       onConfirm: () => {
-        const v = readVendorForm();
-        if (!v) return;
+        const v = readVendorForm(); if (!v) return;
         App.Data.addVendor(v);
         App.Modal.hide(); render();
       }
     });
   }
 
+  // ── 업체 상세 ──
   function openDetail(vendorId) {
     const v = App.Data.getVendors().find(v => v.id === vendorId);
     if (!v) return;
@@ -133,8 +225,8 @@ App.Vendor = (() => {
       title: v.name,
       showConfirm: false,
       content: `
-        <div style="margin-bottom:6px">
-          <span class="vendor-cat">${esc(v.category)}</span>
+        <div style="margin-bottom:12px">
+          <span style="font-size:12px;color:var(--text-sub)">${esc(v.category)}</span>
           <span class="vendor-status ${s.cls}" style="margin-left:8px">${s.label}</span>
         </div>
 
@@ -156,7 +248,8 @@ App.Vendor = (() => {
             포트폴리오 사진
             <label class="btn btn-outline btn-sm" style="cursor:pointer">
               + 사진 추가
-              <input type="file" accept="image/*" multiple style="display:none" onchange="App.Vendor.uploadPhoto('${v.id}','portfolio',this)">
+              <input type="file" accept="image/*" multiple style="display:none"
+                onchange="App.Vendor.uploadPhoto('${v.id}','portfolio',this)">
             </label>
           </div>
           <div class="modal-photo-grid" id="portfolio-${v.id}">
@@ -169,7 +262,8 @@ App.Vendor = (() => {
             서류 (견적서·계약서)
             <label class="btn btn-outline btn-sm" style="cursor:pointer">
               + 서류 추가
-              <input type="file" accept="image/*" multiple style="display:none" onchange="App.Vendor.uploadPhoto('${v.id}','docs',this)">
+              <input type="file" accept="image/*" multiple style="display:none"
+                onchange="App.Vendor.uploadPhoto('${v.id}','docs',this)">
             </label>
           </div>
           <div class="modal-photo-grid" id="docs-${v.id}">
@@ -179,13 +273,14 @@ App.Vendor = (() => {
 
         <div style="border-top:1px solid var(--border);padding-top:14px;display:flex;justify-content:flex-end">
           <button class="btn btn-sm btn-danger" onclick="App.Vendor.deleteVendor('${v.id}')">업체 삭제</button>
-        </div>
-      `
+        </div>`
     });
   }
 
   function renderPhotoGrid(photos, vendorId, type) {
-    if (!photos || photos.length === 0) return `<div style="color:var(--text-sub);font-size:13px;padding:8px 0">사진 없음</div>`;
+    if (!photos || photos.length === 0) {
+      return `<div style="color:var(--text-sub);font-size:13px;padding:6px 0">사진 없음</div>`;
+    }
     return photos.map(p => `
       <div class="modal-photo-item" onclick="App.showImageViewer('${p.data}')">
         <img src="${p.data}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">
@@ -196,13 +291,22 @@ App.Vendor = (() => {
       </div>`).join('');
   }
 
+  // 목록 카드에서 바로 업로드
+  async function quickUpload(vendorId, input) {
+    const files = Array.from(input.files);
+    for (const file of files) {
+      const data = await App.Data.compressImage(file);
+      App.Data.addVendorPhoto(vendorId, 'portfolio', data, file.name);
+    }
+    render();
+  }
+
   async function uploadPhoto(vendorId, type, input) {
     const files = Array.from(input.files);
     for (const file of files) {
       const data = await App.Data.compressImage(file);
       App.Data.addVendorPhoto(vendorId, type, data, file.name);
     }
-    // refresh the photo grids inside the modal
     const v = App.Data.getVendors().find(v => v.id === vendorId);
     const portfolioEl = document.getElementById(`portfolio-${vendorId}`);
     const docsEl = document.getElementById(`docs-${vendorId}`);
@@ -228,8 +332,7 @@ App.Vendor = (() => {
       content: vendorForm(v),
       confirmText: '저장',
       onConfirm: () => {
-        const u = readVendorForm();
-        if (!u) return;
+        const u = readVendorForm(); if (!u) return;
         App.Data.updateVendor(vendorId, u);
         App.Modal.hide(); render();
       }
@@ -244,21 +347,21 @@ App.Vendor = (() => {
   }
 
   function vendorForm(v) {
+    const cats = App.Data.getVendorCategories();
     return `
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">카테고리 *</label>
           <select class="form-input" id="vCat">
-            ${['예식장','스튜디오','드레스','메이크업','폐백·이바지','기타'].map(c =>
-              `<option ${v && v.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+            ${cats.map(c => `<option ${v && v.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">상태</label>
           <select class="form-input" id="vStatus">
-            <option value="review" ${!v || v.status === 'review' ? 'selected' : ''}>🔍 검토중</option>
-            <option value="contact" ${v && v.status === 'contact' ? 'selected' : ''}>📞 상담예정</option>
-            <option value="done" ${v && v.status === 'done' ? 'selected' : ''}>✓ 계약완료</option>
+            <option value="review"  ${!v || v.status === 'review'  ? 'selected' : ''}>🔍 검토중</option>
+            <option value="contact" ${v && v.status === 'contact'  ? 'selected' : ''}>📞 상담예정</option>
+            <option value="done"    ${v && v.status === 'done'     ? 'selected' : ''}>✓ 계약완료</option>
           </select>
         </div>
       </div>
@@ -281,7 +384,7 @@ App.Vendor = (() => {
         <input class="form-input" id="vContact" value="${esc(v?.contact || '')}" placeholder="010-0000-0000">
       </div>
       <div class="form-group">
-        <label class="form-label">태그 (쉼표 구분)</label>
+        <label class="form-label">태그 (쉼표로 구분)</label>
         <input class="form-input" id="vTags" value="${(v?.tags || []).join(', ')}" placeholder="예: 야외 촬영, 원본 제공">
       </div>
       <div class="form-group">
@@ -294,14 +397,14 @@ App.Vendor = (() => {
     const name = document.getElementById('vName').value.trim();
     if (!name) { alert('업체명을 입력해주세요.'); return null; }
     return {
-      category: document.getElementById('vCat').value,
-      status: document.getElementById('vStatus').value,
+      category:    document.getElementById('vCat').value,
+      status:      document.getElementById('vStatus').value,
       name,
-      price: document.getElementById('vPrice').value.trim(),
+      price:       document.getElementById('vPrice').value.trim(),
       consultDate: document.getElementById('vDate').value,
-      contact: document.getElementById('vContact').value.trim(),
-      tags: document.getElementById('vTags').value.split(',').map(t => t.trim()).filter(Boolean),
-      memo: document.getElementById('vMemo').value.trim()
+      contact:     document.getElementById('vContact').value.trim(),
+      tags:        document.getElementById('vTags').value.split(',').map(t => t.trim()).filter(Boolean),
+      memo:        document.getElementById('vMemo').value.trim()
     };
   }
 
@@ -309,5 +412,10 @@ App.Vendor = (() => {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  return { render, setCategory, openAdd, openDetail, openEdit, deleteVendor, uploadPhoto, deletePhoto };
+  return {
+    render, setCategory,
+    openManageCategories, addCategory, promptRenameCategory, promptDeleteCategory,
+    openAdd, openDetail, openEdit, deleteVendor,
+    quickUpload, uploadPhoto, deletePhoto
+  };
 })();
