@@ -9,21 +9,31 @@ App.Auth = (() => {
     return typeof firebase !== 'undefined' && _db !== null;
   }
 
+  function isConfigured() {
+    return window.FIREBASE_CONFIG &&
+           window.FIREBASE_CONFIG.apiKey !== '여기에_입력';
+  }
+
   function init() {
-    if (typeof firebase === 'undefined') return; // Firebase SDK 미로드 시 무시
+    if (typeof firebase === 'undefined' || !isConfigured()) return;
     try {
       if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
       _db = firebase.firestore();
+
+      // Firebase가 설정된 경우 → 로그인 필수
+      showLoginOverlay(true);
 
       firebase.auth().onAuthStateChanged(async user => {
         if (user) {
           _uid = user.uid;
           updateNavUser(user);
           await loadFromCloud();
+          showLoginOverlay(false);
           App.Home.render();
         } else {
           _uid = null;
           updateNavUser(null);
+          showLoginOverlay(true); // 로그아웃 시 앱 가리기
         }
       });
     } catch (e) {
@@ -31,10 +41,21 @@ App.Auth = (() => {
     }
   }
 
+  function showLoginOverlay(show) {
+    const el = document.getElementById('loginRequired');
+    if (!el) return;
+    if (show) el.classList.add('open');
+    else el.classList.remove('open');
+  }
+
   function login() {
-    if (!isReady()) { alert('Firebase 설정이 필요합니다.\nfirebase-config.js를 확인해주세요.'); return; }
+    if (!isReady()) {
+      alert('Firebase 설정이 필요합니다.\nfirebase-config.js를 확인해주세요.');
+      return;
+    }
     const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).catch(e => alert('로그인 실패: ' + e.message));
+    firebase.auth().signInWithPopup(provider)
+      .catch(e => alert('로그인 실패: ' + e.message));
   }
 
   function logout() {

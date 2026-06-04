@@ -219,9 +219,16 @@ select.form-input { cursor: pointer; }
 /* ── TAGS ── */
 .tag { font-size: 11px; padding: 2px 8px; border-radius: 100px; background: var(--bg); border: 1px solid var(--border); color: var(--text-sub); }
 
-/* ── SETUP OVERLAY ── */
-.setup-overlay { display: none; position: fixed; inset: 0; background: linear-gradient(135deg, #FDF5EE 0%, #F0E0CC 100%); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px; }
-.setup-overlay.open { display: flex; }
+/* ── SETUP / LOGIN OVERLAY ── */
+.setup-overlay,
+.login-overlay {
+  display: none; position: fixed; inset: 0;
+  background: linear-gradient(135deg, #FDF5EE 0%, #F0E0CC 100%);
+  z-index: 1000; align-items: center; justify-content: center;
+  flex-direction: column; text-align: center; padding: 40px;
+}
+.setup-overlay.open,
+.login-overlay.open { display: flex; }
 .setup-logo { font-size: 56px; margin-bottom: 20px; }
 .setup-title { font-size: 28px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px; }
 .setup-sub { font-size: 15px; color: var(--text-sub); margin-bottom: 32px; line-height: 1.6; }
