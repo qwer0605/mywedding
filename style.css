@@ -68,6 +68,11 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .progress-bar { background: var(--primary); height: 100%; border-radius: 100px; transition: width 0.4s; }
 .progress-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-sub); }
 
+.todo-list { max-height: 240px; overflow-y: auto; padding-right: 4px; }
+.todo-list::-webkit-scrollbar { width: 6px; }
+.todo-list::-webkit-scrollbar-track { background: transparent; }
+.todo-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
 .todo-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .todo-item:last-child { border-bottom: none; }
 .todo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 5px; }
@@ -122,6 +127,8 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .cat-tab { padding: 7px 16px; border: 1.5px solid var(--border); border-radius: 100px; font-size: 13px; cursor: pointer; background: white; color: var(--text-sub); font-family: inherit; font-weight: 500; transition: all 0.18s; }
 .cat-tab:hover { border-color: var(--primary); color: var(--primary); }
 .cat-tab.active { background: var(--primary); border-color: var(--primary); color: white; }
+.cat-tab-count { display: inline-block; background: rgba(0,0,0,0.08); font-size: 11px; padding: 1px 6px; border-radius: 100px; margin-left: 4px; }
+.cat-tab.active .cat-tab-count { background: rgba(255,255,255,0.25); }
 
 .compare-wrap { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
 .compare-table { width: 100%; border-collapse: collapse; }
@@ -143,6 +150,21 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .s-review { background: #FFF8E6; color: var(--warning); }
 .s-done { background: #EDFAEC; color: var(--success); }
 .s-contact { background: #EEF4FF; color: #4A7EC7; }
+
+.vendor-card.confirmed { border-color: var(--primary); background: var(--primary-light); }
+.confirm-star { border: none; background: transparent; font-size: 16px; line-height: 1; padding: 0; cursor: pointer; opacity: 0.3; filter: grayscale(1); transition: all 0.15s; }
+.confirm-star:hover { opacity: 0.7; }
+.confirm-star.active { opacity: 1; filter: none; }
+.confirm-badge { display: inline-block; background: var(--primary); color: white; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 100px; vertical-align: middle; }
+
+.confirm-overview { display: flex; flex-direction: column; gap: 2px; }
+.confirm-overview-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 4px; border-bottom: 1px solid #F8F4F0; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.confirm-overview-row:last-child { border-bottom: none; }
+.confirm-overview-row:hover { background: var(--bg); }
+.confirm-overview-cat { font-size: 13px; font-weight: 600; }
+.confirm-overview-vendor { font-size: 13px; font-weight: 600; color: var(--primary); }
+.confirm-overview-pending { font-size: 12px; color: var(--warning); }
+.confirm-overview-empty { font-size: 12px; color: var(--text-sub); }
 
 /* ── GUEST BADGES ── */
 .g-attending { background: #EDFAEC; color: var(--success); }

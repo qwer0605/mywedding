@@ -170,7 +170,7 @@ App.Data = (() => {
   function addVendor(v) {
     const vendor = { id: generateId(), category: v.category || '', name: v.name || '',
       price: v.price || '', contact: v.contact || '', consultDate: v.consultDate || '',
-      memo: v.memo || '', status: v.status || 'review', tags: v.tags || [],
+      memo: v.memo || '', status: v.status || 'review', tags: v.tags || [], confirmed: false,
       portfolio: [], docs: [], costItems: [], schedules: [] };
     _data.vendors.push(vendor); save(); return vendor;
   }
@@ -178,6 +178,16 @@ App.Data = (() => {
   function updateVendor(id, u) {
     const v = _data.vendors.find(v => v.id === id);
     if (v) Object.assign(v, u); save();
+  }
+
+  function setVendorConfirmed(id, confirmed) {
+    const v = _data.vendors.find(v => v.id === id);
+    if (!v) return;
+    if (confirmed) {
+      _data.vendors.forEach(o => { if (o.category === v.category && o.id !== v.id) o.confirmed = false; });
+    }
+    v.confirmed = confirmed;
+    save();
   }
 
   function deleteVendor(id) { _data.vendors = _data.vendors.filter(v => v.id !== id); save(); }
@@ -436,7 +446,7 @@ App.Data = (() => {
     getVendorCategories, addVendorCategory, renameVendorCategory, deleteVendorCategory,
     getStages, addStage, updateStage, deleteStage,
     addTask, updateTask, toggleTask, deleteTask,
-    getVendors, addVendor, updateVendor, deleteVendor,
+    getVendors, addVendor, updateVendor, deleteVendor, setVendorConfirmed,
     addCostItem, updateCostItem, deleteCostItem, getVendorCostSummary,
     addScheduleItem, updateScheduleItem, deleteScheduleItem,
     addVendorPhoto, deleteVendorPhoto,

@@ -42,7 +42,7 @@ App.Home = (() => {
       .sort((a, b) => a.date.localeCompare(b.date))
       .map(d => ({ ...d, ddayLabel: getDdayLabel(d.date) }));
 
-    if (upcoming.length >= 3) return upcoming.slice(0, 3);
+    if (upcoming.length >= 10) return upcoming.slice(0, 10);
 
     const fallback = [];
     for (const stage of App.Data.getStages()) {
@@ -50,7 +50,7 @@ App.Home = (() => {
         if (!task.done && !task.dueDate) fallback.push({ label: App.Util.esc(task.name), sub: App.Util.esc(stage.name), ddayLabel: null });
       }
     }
-    return [...upcoming, ...fallback].slice(0, 3);
+    return [...upcoming, ...fallback].slice(0, 10);
   }
 
   function fmt(n) {
@@ -111,14 +111,14 @@ App.Home = (() => {
           <div class="card-label">지금 해야 할 것</div>
           ${urgent.length === 0
             ? '<div style="color:var(--text-sub);font-size:13px;padding:8px 0">모든 항목 완료 🎉</div>'
-            : urgent.map(item => `
+            : `<div class="todo-list">${urgent.map(item => `
               <div class="todo-item">
                 <div class="todo-dot"></div>
                 <div style="flex:1">
                   <div style="font-size:13px">${item.label}</div>
                   <div style="font-size:11px;color:var(--text-sub);margin-top:2px">${item.sub}${item.ddayLabel ? ` · <span style="color:${item.ddayLabel.urgency === 'danger' ? 'var(--danger)' : item.ddayLabel.urgency === 'urgent' ? 'var(--primary)' : 'var(--text-sub)'};font-weight:${item.ddayLabel.urgency === 'normal' ? '500' : '700'}">${item.ddayLabel.text}</span>` : ''}</div>
                 </div>
-              </div>`).join('')}
+              </div>`).join('')}</div>`}
         </div>
       </div>
 

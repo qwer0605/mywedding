@@ -7,6 +7,7 @@ App.Vendor = (() => {
     contact: { label: '📞 상담예정', cls: 's-contact' }
   };
   let activeCat = '전체';
+  let activeStatus = '전체';
 
   function getCategories() { return ['전체', ...App.Data.getVendorCategories()]; }
 
@@ -16,8 +17,12 @@ App.Vendor = (() => {
     // activeCat이 삭제된 경우 '전체'로 초기화
     if (!cats.includes(activeCat)) activeCat = '전체';
 
-    const filtered = activeCat === '전체' ? vendors : vendors.filter(v => v.category === activeCat);
-    const sameCat = activeCat !== '전체' && filtered.length >= 2;
+    const catFiltered = activeCat === '전체' ? vendors : vendors.filter(v => v.category === activeCat);
+    const filtered = activeStatus === '전체' ? catFiltered : catFiltered.filter(v => (v.status || 'review') === activeStatus);
+    const sameCat = activeCat !== '전체' && catFiltered.length >= 2;
+
+    const counts = { review: 0, contact: 0, done: 0 };
+    catFiltered.forEach(v => { counts[v.status || 'review']++; });
 
     document.getElementById('vendorScreen').innerHTML = `
       <div class="page-header">
@@ -28,11 +33,20 @@ App.Vendor = (() => {
         </div>
       </div>
 
+      ${renderCategoryOverview(vendors, cats)}
+
       <div class="cat-tabs">
         ${cats.map(c => `<button class="cat-tab ${c === activeCat ? 'active' : ''}" onclick="App.Vendor.setCategory('${esc(c)}')">${esc(c)}</button>`).join('')}
       </div>
 
-      ${sameCat ? renderCompare(filtered) : ''}
+      <div class="cat-tabs">
+        <button class="cat-tab ${activeStatus === '전체' ? 'active' : ''}" onclick="App.Vendor.setStatus('전체')">전체 상태 <span class="cat-tab-count">${catFiltered.length}</span></button>
+        <button class="cat-tab ${activeStatus === 'review' ? 'active' : ''}" onclick="App.Vendor.setStatus('review')">🔍 검토중 <span class="cat-tab-count">${counts.review}</span></button>
+        <button class="cat-tab ${activeStatus === 'contact' ? 'active' : ''}" onclick="App.Vendor.setStatus('contact')">📞 상담예정 <span class="cat-tab-count">${counts.contact}</span></button>
+        <button class="cat-tab ${activeStatus === 'done' ? 'active' : ''}" onclick="App.Vendor.setStatus('done')">✓ 계약완료 <span class="cat-tab-count">${counts.done}</span></button>
+      </div>
+
+      ${sameCat ? renderCompare(catFiltered) : ''}
 
       <div class="section-label">
         ${activeCat === '전체' ? '전체 업체 목록' : esc(activeCat) + ' 목록'}
@@ -45,6 +59,31 @@ App.Vendor = (() => {
         </button>
       </div>
     `;
+  }
+
+  function renderCategoryOverview(vendors, cats) {
+    const realCats = cats.filter(c => c !== '전체');
+    if (realCats.length === 0) return '';
+
+    return `
+      <div class="card mb-20">
+        <div class="card-label">카테고리별 확정 현황</div>
+        <div class="confirm-overview">
+          ${realCats.map(c => {
+            const list = vendors.filter(v => v.category === c);
+            const confirmed = list.find(v => v.confirmed);
+            return `
+              <div class="confirm-overview-row" onclick="App.Vendor.setCategory('${esc(c)}')">
+                <span class="confirm-overview-cat">${esc(c)}</span>
+                ${confirmed
+                  ? `<span class="confirm-overview-vendor">⭐ ${esc(confirmed.name)}</span>`
+                  : list.length > 0
+                    ? `<span class="confirm-overview-pending">미확정 · ${list.length}곳 검토중</span>`
+                    : `<span class="confirm-overview-empty">미등록</span>`}
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
   }
 
   function renderCompare(vendors) {
@@ -63,7 +102,7 @@ App.Vendor = (() => {
           <thead>
             <tr>
               <th style="width:110px">항목</th>
-              ${vendors.map(v => `<th>${esc(v.name)}${v.status === 'done' ? ' <span class="rec">계약</span>' : ''}</th>`).join('')}
+              ${vendors.map(v => `<th>${esc(v.name)}${v.confirmed ? ' <span class="rec">확정</span>' : v.status === 'done' ? ' <span class="rec">계약</span>' : ''}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
@@ -118,12 +157,15 @@ App.Vendor = (() => {
       : `<div class="vendor-price">${esc(v.price) || '<span style="color:var(--text-sub);font-size:14px;font-weight:400">금액 미입력</span>'}</div>`;
 
     return `
-      <div class="vendor-card" onclick="App.Vendor.openDetail('${v.id}')">
+      <div class="vendor-card ${v.confirmed ? 'confirmed' : ''}" onclick="App.Vendor.openDetail('${v.id}')">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
           <div class="vendor-cat">${esc(v.category)}</div>
-          <span class="vendor-status ${s.cls}">${s.label}</span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <span class="vendor-status ${s.cls}">${s.label}</span>
+            <button class="confirm-star ${v.confirmed ? 'active' : ''}" onclick="event.stopPropagation();App.Vendor.toggleConfirmed('${v.id}')" title="${v.confirmed ? '확정 해제' : '이 업체로 확정'}">⭐</button>
+          </div>
         </div>
-        <div class="vendor-name">${esc(v.name)}</div>
+        <div class="vendor-name">${esc(v.name)}${v.confirmed ? ' <span class="confirm-badge">확정</span>' : ''}</div>
         ${priceDisplay}
         <div class="vendor-tags">${(v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
         <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">
@@ -151,6 +193,14 @@ App.Vendor = (() => {
   }
 
   function setCategory(cat) { activeCat = cat; render(); }
+  function setStatus(status) { activeStatus = status; render(); }
+
+  function toggleConfirmed(vendorId) {
+    const v = App.Data.getVendors().find(v => v.id === vendorId);
+    if (!v) return;
+    App.Data.setVendorConfirmed(vendorId, !v.confirmed);
+    render();
+  }
 
   // ── 카테고리 관리 모달 ──
   function openManageCategories() {
@@ -706,7 +756,7 @@ App.Vendor = (() => {
   }
 
   return {
-    render, setCategory,
+    render, setCategory, setStatus, toggleConfirmed,
     openManageCategories, addCategory, promptRenameCategory, promptDeleteCategory,
     openAdd, openDetail, openEdit, deleteVendor,
     openAddCostItem, openEditCostItem, removeCostItem,
