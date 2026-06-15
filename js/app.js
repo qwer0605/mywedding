@@ -33,13 +33,87 @@ App.Modal = (() => {
   return { show, hide };
 })();
 
-// ── Image viewer ──
+// ── Image viewer (확대/축소/원본 보기) ──
+let _imgZoom = 1;
+
 App.showImageViewer = (src) => {
   App.Modal.show({
     title: '사진 보기',
     showConfirm: false,
-    content: `<img src="${src}" style="width:100%;border-radius:12px;max-height:70vh;object-fit:contain">`
+    wide: true,
+    content: `
+      <div class="img-viewer">
+        <div class="img-viewer-toolbar">
+          <button class="btn btn-ghost btn-sm" onclick="App.zoomImage(-0.25)">－</button>
+          <span class="img-zoom-label" id="imgZoomLabel">100%</span>
+          <button class="btn btn-ghost btn-sm" onclick="App.zoomImage(0.25)">＋</button>
+          <button class="btn btn-ghost btn-sm" onclick="App.resetImageZoom()">원본 크기</button>
+          <button class="btn btn-ghost btn-sm" onclick="App.fitImageZoom()">화면에 맞춤</button>
+        </div>
+        <div class="img-viewer-frame" id="imgViewerFrame">
+          <img id="imgViewerImg" src="${src}">
+        </div>
+      </div>`
   });
+
+  const img = document.getElementById('imgViewerImg');
+  const frame = document.getElementById('imgViewerFrame');
+
+  const fit = () => App.fitImageZoom();
+  if (img.complete && img.naturalWidth) fit();
+  else img.onload = fit;
+
+  // 드래그로 이동(panning)
+  let dragging = false, startX, startY, scrollL, scrollT;
+  frame.onmousedown = e => {
+    dragging = true;
+    frame.classList.add('dragging');
+    startX = e.pageX; startY = e.pageY;
+    scrollL = frame.scrollLeft; scrollT = frame.scrollTop;
+  };
+  frame.onmousemove = e => {
+    if (!dragging) return;
+    frame.scrollLeft = scrollL - (e.pageX - startX);
+    frame.scrollTop = scrollT - (e.pageY - startY);
+  };
+  frame.onmouseup = frame.onmouseleave = () => {
+    dragging = false;
+    frame.classList.remove('dragging');
+  };
+  // 더블클릭으로 원본/맞춤 전환
+  frame.ondblclick = () => {
+    if (Math.abs(_imgZoom - 1) < 0.01) App.fitImageZoom();
+    else App.resetImageZoom();
+  };
+};
+
+function _applyImgZoom() {
+  const img = document.getElementById('imgViewerImg');
+  const label = document.getElementById('imgZoomLabel');
+  if (!img || !img.naturalWidth) return;
+  img.style.width = Math.round(img.naturalWidth * _imgZoom) + 'px';
+  img.style.height = Math.round(img.naturalHeight * _imgZoom) + 'px';
+  if (label) label.textContent = Math.round(_imgZoom * 100) + '%';
+}
+
+App.zoomImage = (delta) => {
+  const img = document.getElementById('imgViewerImg');
+  if (!img || !img.naturalWidth) return;
+  _imgZoom = Math.min(4, Math.max(0.1, _imgZoom + delta));
+  _applyImgZoom();
+};
+
+App.resetImageZoom = () => {
+  _imgZoom = 1;
+  _applyImgZoom();
+};
+
+App.fitImageZoom = () => {
+  const img = document.getElementById('imgViewerImg');
+  const frame = document.getElementById('imgViewerFrame');
+  if (!img || !frame || !img.naturalWidth) return;
+  _imgZoom = Math.min(1, frame.clientWidth / img.naturalWidth, frame.clientHeight / img.naturalHeight);
+  _applyImgZoom();
 };
 
 // ── Tab navigation ──
