@@ -28,6 +28,10 @@ App.Auth = (() => {
           _uid = user.uid;
           updateNavUser(user);
           await loadFromCloud();
+          // 클라우드 동기화로 결혼 정보가 채워졌다면 설정 시작 화면을 닫는다
+          if (App.Data.get().settings.weddingDate) {
+            document.getElementById('setupOverlay').classList.remove('open');
+          }
           showLoginOverlay(false);
           App.Home.render();
         } else {

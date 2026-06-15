@@ -211,7 +211,7 @@ App.Vendor = (() => {
           <div class="vendor-photo-row">
             ${thumbs.map(p => `
               <div class="vendor-thumb" onclick="event.stopPropagation();App.showImageViewer('${p.data}')">
-                <img src="${p.data}" style="width:100%;height:100%;object-fit:cover">
+                <img src="${p.data}" style="width:100%;height:100%;object-fit:cover" onerror="App.markImgBroken(this)">
               </div>`).join('')}
             <label class="vendor-thumb-add" onclick="event.stopPropagation()" title="사진 추가">
               ＋
@@ -657,7 +657,7 @@ App.Vendor = (() => {
     }
     return photos.map(p => `
       <div class="modal-photo-item" onclick="App.showImageViewer('${p.data}')">
-        <img src="${p.data}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">
+        <img src="${p.data}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" onerror="App.markImgBroken(this)">
         <button class="modal-photo-delete" onclick="event.stopPropagation();App.Vendor.deletePhoto('${vendorId}','${type}','${p.id}')">🗑️</button>
       </div>`).join('');
   }

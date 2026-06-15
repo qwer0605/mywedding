@@ -51,7 +51,7 @@ App.showImageViewer = (src) => {
           <button class="btn btn-ghost btn-sm" onclick="App.fitImageZoom()">화면에 맞춤</button>
         </div>
         <div class="img-viewer-frame" id="imgViewerFrame">
-          <img id="imgViewerImg" src="${src}">
+          <img id="imgViewerImg" src="${src}" onerror="App.handleImgViewerError(this)">
         </div>
       </div>`
   });
@@ -114,6 +114,35 @@ App.fitImageZoom = () => {
   if (!img || !frame || !img.naturalWidth) return;
   _imgZoom = Math.min(1, frame.clientWidth / img.naturalWidth, frame.clientHeight / img.naturalHeight);
   _applyImgZoom();
+};
+
+// 사진 보기 모달에서 이미지를 표시할 수 없을 때 (손상된 파일·미지원 형식)
+App.handleImgViewerError = (img) => {
+  const frame = document.getElementById('imgViewerFrame');
+  const toolbar = document.querySelector('.img-viewer-toolbar');
+  if (toolbar) toolbar.style.display = 'none';
+  if (!frame) return;
+  const src = img.src || '';
+  const downloadBtn = src.startsWith('data:application/pdf')
+    ? `<a class="btn btn-primary btn-sm" href="${src}" download="document.pdf">📄 PDF 다운로드</a>`
+    : '';
+  frame.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-sub);text-align:center;padding:20px">
+      <div style="font-size:40px">⚠️</div>
+      <div>이미지를 표시할 수 없습니다.<br>파일이 손상되었거나 지원하지 않는 형식입니다.</div>
+      ${downloadBtn}
+    </div>`;
+};
+
+// 사진 썸네일이 손상된 경우 깨진 이미지 아이콘 대신 표시
+App.markImgBroken = (img) => {
+  const parent = img.parentElement;
+  img.remove();
+  const div = document.createElement('div');
+  div.className = 'broken-thumb';
+  div.textContent = '⚠️';
+  div.title = '이미지를 표시할 수 없습니다';
+  parent.appendChild(div);
 };
 
 // ── Tab navigation ──
