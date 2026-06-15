@@ -79,6 +79,12 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .quick-card .name { font-size: 13px; font-weight: 600; }
 .quick-card .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
 
+.vendor-cost-card { margin-top: 16px; }
+.vendor-cost-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #F8F4F0; }
+.vendor-cost-row:last-of-type { border-bottom: none; }
+.vendor-cost-amount { font-weight: 600; }
+.vendor-cost-total-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: var(--primary); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px; }
+
 /* ── TIMELINE ── */
 .timeline-stage { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: white; }
 .stage-header { display: flex; align-items: center; padding: 16px 20px; cursor: pointer; transition: background 0.15s; gap: 12px; }

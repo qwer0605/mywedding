@@ -9,16 +9,47 @@ App.Home = (() => {
     return Math.ceil((wedding - today) / 86400000);
   }
 
-  function getUrgentTasks() {
-    const stages = App.Data.getStages();
-    const pending = [];
-    for (const stage of stages) {
+  function getDdayLabel(dateStr) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(dateStr); d.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    if (diff === 0) return 'D-Day';
+    return diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+  }
+
+  function getUrgentItems() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dated = [];
+
+    for (const stage of App.Data.getStages()) {
       for (const task of stage.tasks) {
-        if (!task.done) pending.push({ stage: stage.name, task });
+        if (!task.done && task.dueDate) {
+          dated.push({ label: App.Util.esc(task.name), sub: App.Util.esc(stage.name), date: task.dueDate });
+        }
       }
-      if (pending.length >= 3) break;
     }
-    return pending.slice(0, 3);
+    for (const v of App.Data.getVendors()) {
+      for (const item of (v.schedules || [])) {
+        if (item.date) {
+          dated.push({ label: `${App.Util.esc(item.name)} · ${App.Util.esc(v.name)}`, sub: '업체 일정', date: item.date });
+        }
+      }
+    }
+
+    const upcoming = dated
+      .filter(d => { const dt = new Date(d.date); dt.setHours(0,0,0,0); return dt >= today; })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(d => ({ ...d, ddayLabel: getDdayLabel(d.date) }));
+
+    if (upcoming.length >= 3) return upcoming.slice(0, 3);
+
+    const fallback = [];
+    for (const stage of App.Data.getStages()) {
+      for (const task of stage.tasks) {
+        if (!task.done && !task.dueDate) fallback.push({ label: App.Util.esc(task.name), sub: App.Util.esc(stage.name), ddayLabel: null });
+      }
+    }
+    return [...upcoming, ...fallback].slice(0, 3);
   }
 
   function fmt(n) {
@@ -32,8 +63,9 @@ App.Home = (() => {
     const { groomName, brideName, weddingDate, weddingTime } = App.Data.get().settings;
     const dday = getDday();
     const { total, done, pct } = App.Data.getProgress();
-    const urgent = getUrgentTasks();
+    const urgent = getUrgentItems();
     const vendors = App.Data.getVendors();
+    const vendorCost = App.Data.getVendorCostSummary();
     const photos = App.Data.getPhotos();
     const budget = App.Data.getBudget();
     const totalSpent = budget.items.reduce((a, i) => a + i.spent, 0);
@@ -77,12 +109,12 @@ App.Home = (() => {
           <div class="card-label">지금 해야 할 것</div>
           ${urgent.length === 0
             ? '<div style="color:var(--text-sub);font-size:13px;padding:8px 0">모든 항목 완료 🎉</div>'
-            : urgent.map(({ stage, task }) => `
+            : urgent.map(item => `
               <div class="todo-item">
                 <div class="todo-dot"></div>
                 <div style="flex:1">
-                  <div style="font-size:13px">${task.name}</div>
-                  <div style="font-size:11px;color:var(--text-sub);margin-top:2px">${stage}</div>
+                  <div style="font-size:13px">${item.label}</div>
+                  <div style="font-size:11px;color:var(--text-sub);margin-top:2px">${item.sub}${item.ddayLabel ? ` · <span style="color:var(--primary);font-weight:600">${item.ddayLabel}</span>` : ''}</div>
                 </div>
               </div>`).join('')}
         </div>
@@ -97,7 +129,7 @@ App.Home = (() => {
         <div class="quick-card" onclick="App.showTab('vendor')">
           <div class="icon">🏢</div>
           <div class="name">업체 관리</div>
-          <div class="sub">${vendors.length}곳 등록</div>
+          <div class="sub">${vendors.length}곳${vendorCost.total ? ' · ' + App.Util.fmtWon(vendorCost.total) : ' 등록'}</div>
         </div>
         <div class="quick-card" onclick="App.showTab('photos')">
           <div class="icon">📷</div>
@@ -110,7 +142,32 @@ App.Home = (() => {
           <div class="sub">${budgetPct}% 지출</div>
         </div>
       </div>
+
+      ${renderVendorCostCard(vendorCost)}
     `;
+  }
+
+  function renderVendorCostCard(vendorCost) {
+    const cats = App.Data.getVendorCategories().filter(c => vendorCost.byCategory[c]);
+
+    return `
+      <div class="card vendor-cost-card">
+        <div class="card-label">업체별 비용 현황</div>
+        ${vendorCost.total === 0
+          ? `<div style="color:var(--text-sub);font-size:13px;padding:8px 0">업체별 비용 항목을 등록하면 여기에 요약이 표시됩니다.</div>`
+          : `${cats.map(c => {
+              const { count, total } = vendorCost.byCategory[c];
+              return `
+                <div class="vendor-cost-row">
+                  <span class="vendor-cost-name">${App.Util.esc(c)} <span style="color:var(--text-sub);font-weight:400">(${count}곳)</span></span>
+                  <span class="vendor-cost-amount">${total ? App.Util.fmtWon(total) : '—'}</span>
+                </div>`;
+            }).join('')}
+            <div class="vendor-cost-total-row">
+              <span>전체 합계</span>
+              <span>${App.Util.fmtWon(vendorCost.total)}</span>
+            </div>`}
+      </div>`;
   }
 
   return { render };

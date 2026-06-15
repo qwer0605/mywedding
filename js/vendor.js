@@ -280,6 +280,16 @@ App.Vendor = (() => {
 
         <div class="modal-section">
           <div class="modal-section-title">
+            📅 일정 관리
+            <button class="btn btn-outline btn-sm" onclick="App.Vendor.openAddScheduleItem('${v.id}')">+ 일정 추가</button>
+          </div>
+          <div id="scheduleItems-${v.id}">
+            ${renderScheduleItems(v)}
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">
             포트폴리오 사진
             <label class="btn btn-outline btn-sm" style="cursor:pointer">
               + 사진 추가
@@ -422,8 +432,8 @@ App.Vendor = (() => {
       </div>
       <div class="form-group">
         <label class="form-label">금액 (원)</label>
-        <input class="form-input" type="number" id="ciAmount" value="${ci?.amount || ''}" placeholder="예: 1000000">
-        <div style="font-size:12px;color:var(--text-sub);margin-top:4px">100만 원 → 1000000</div>
+        <input class="form-input" type="text" inputmode="numeric" id="ciAmount" value="${ci?.amount ? Number(ci.amount).toLocaleString('ko-KR') : ''}" placeholder="예: 1,000,000" oninput="App.Util.formatNumberInput(this)">
+        <div style="font-size:12px;color:var(--text-sub);margin-top:4px">100만 원 → 1,000,000</div>
       </div>
       <div class="form-group">
         <label class="form-label">구분</label>
@@ -450,9 +460,113 @@ App.Vendor = (() => {
     const typeEl = document.querySelector('input[name="ciType"]:checked');
     return {
       name,
-      amount: Number(document.getElementById('ciAmount').value) || 0,
+      amount: App.Util.parseNumberInput('ciAmount'),
       type: typeEl ? typeEl.value : 'included',
       memo: document.getElementById('ciMemo').value.trim()
+    };
+  }
+
+  // ── 일정 관리 렌더 ──
+  function renderScheduleItems(v) {
+    const items = [...(v.schedules || [])].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+    if (items.length === 0) {
+      return `<div class="cost-empty">등록된 일정이 없습니다. + 일정 추가를 눌러 상담일·촬영일 등을 입력하세요.</div>`;
+    }
+
+    return `
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>일정명</th>
+            <th>날짜</th>
+            <th>메모</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(si => `
+            <tr class="cost-row" id="si-${si.id}">
+              <td><strong>${esc(si.name)}</strong></td>
+              <td>${esc(si.date) || '—'}</td>
+              <td style="font-size:12px;color:var(--text-sub)">${esc(si.memo)}</td>
+              <td style="display:flex;gap:2px">
+                <button class="task-btn" onclick="App.Vendor.openEditScheduleItem('${v.id}','${si.id}')">✏️</button>
+                <button class="task-btn" onclick="App.Vendor.removeScheduleItem('${v.id}','${si.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function refreshScheduleItems(vendorId) {
+    const v = App.Data.getVendors().find(v => v.id === vendorId);
+    const el = document.getElementById(`scheduleItems-${vendorId}`);
+    if (v && el) el.innerHTML = renderScheduleItems(v);
+  }
+
+  function openAddScheduleItem(vendorId) {
+    App.Modal.show({
+      title: '일정 추가',
+      content: scheduleItemForm(),
+      confirmText: '추가',
+      onConfirm: () => {
+        const item = readScheduleItemForm(); if (!item) return;
+        App.Data.addScheduleItem(vendorId, item);
+        App.Modal.hide();
+        refreshScheduleItems(vendorId);
+        openDetail(vendorId);
+      }
+    });
+  }
+
+  function openEditScheduleItem(vendorId, itemId) {
+    const v = App.Data.getVendors().find(v => v.id === vendorId);
+    const si = v && (v.schedules || []).find(i => i.id === itemId);
+    if (!si) return;
+    App.Modal.show({
+      title: '일정 편집',
+      content: scheduleItemForm(si),
+      confirmText: '저장',
+      onConfirm: () => {
+        const item = readScheduleItemForm(); if (!item) return;
+        App.Data.updateScheduleItem(vendorId, itemId, item);
+        App.Modal.hide();
+        refreshScheduleItems(vendorId);
+        openDetail(vendorId);
+      }
+    });
+  }
+
+  function removeScheduleItem(vendorId, itemId) {
+    if (!confirm('이 일정을 삭제하시겠어요?')) return;
+    App.Data.deleteScheduleItem(vendorId, itemId);
+    refreshScheduleItems(vendorId);
+    openDetail(vendorId);
+  }
+
+  function scheduleItemForm(si) {
+    return `
+      <div class="form-group">
+        <label class="form-label">일정명 *</label>
+        <input class="form-input" id="siName" value="${esc(si?.name || '')}" placeholder="예: 상담, 촬영, 계약금 납부">
+      </div>
+      <div class="form-group">
+        <label class="form-label">날짜</label>
+        <input class="form-input" type="date" id="siDate" value="${si?.date || ''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모 (선택)</label>
+        <input class="form-input" id="siMemo" value="${esc(si?.memo || '')}" placeholder="예: 오전 11시, 준비물 등">
+      </div>`;
+  }
+
+  function readScheduleItemForm() {
+    const name = document.getElementById('siName').value.trim();
+    if (!name) { alert('일정명을 입력해주세요.'); return null; }
+    return {
+      name,
+      date: document.getElementById('siDate').value,
+      memo: document.getElementById('siMemo').value.trim()
     };
   }
 
@@ -596,6 +710,7 @@ App.Vendor = (() => {
     openManageCategories, addCategory, promptRenameCategory, promptDeleteCategory,
     openAdd, openDetail, openEdit, deleteVendor,
     openAddCostItem, openEditCostItem, removeCostItem,
+    openAddScheduleItem, openEditScheduleItem, removeScheduleItem,
     quickUpload, uploadPhoto, deletePhoto
   };
 })();

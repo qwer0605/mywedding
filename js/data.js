@@ -169,7 +169,7 @@ App.Data = (() => {
     const vendor = { id: generateId(), category: v.category || '', name: v.name || '',
       price: v.price || '', contact: v.contact || '', consultDate: v.consultDate || '',
       memo: v.memo || '', status: v.status || 'review', tags: v.tags || [],
-      portfolio: [], docs: [], costItems: [] };
+      portfolio: [], docs: [], costItems: [], schedules: [] };
     _data.vendors.push(vendor); save(); return vendor;
   }
 
@@ -207,6 +207,39 @@ App.Data = (() => {
   function deleteCostItem(vendorId, itemId) {
     const v = _data.vendors.find(v => v.id === vendorId);
     if (v) { v.costItems = (v.costItems || []).filter(i => i.id !== itemId); save(); }
+  }
+
+  // Vendor Schedule Items
+  function addScheduleItem(vendorId, item) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    if (!v) return;
+    if (!v.schedules) v.schedules = [];
+    const si = { id: generateId(), name: item.name || '', date: item.date || '', memo: item.memo || '' };
+    v.schedules.push(si); save(); return si;
+  }
+
+  function updateScheduleItem(vendorId, itemId, u) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    const si = v && (v.schedules || []).find(i => i.id === itemId);
+    if (si) Object.assign(si, u); save();
+  }
+
+  function deleteScheduleItem(vendorId, itemId) {
+    const v = _data.vendors.find(v => v.id === vendorId);
+    if (v) { v.schedules = (v.schedules || []).filter(i => i.id !== itemId); save(); }
+  }
+
+  function getVendorCostSummary() {
+    const byCategory = {};
+    let total = 0;
+    for (const v of get().vendors) {
+      const sum = (v.costItems || []).reduce((s, i) => s + (i.amount || 0), 0);
+      total += sum;
+      if (!byCategory[v.category]) byCategory[v.category] = { count: 0, total: 0 };
+      byCategory[v.category].count += 1;
+      byCategory[v.category].total += sum;
+    }
+    return { total, byCategory };
   }
 
   function deleteVendorPhoto(vendorId, type, photoId) {
@@ -313,7 +346,8 @@ App.Data = (() => {
     getStages, addStage, updateStage, deleteStage,
     addTask, updateTask, toggleTask, deleteTask,
     getVendors, addVendor, updateVendor, deleteVendor,
-    addCostItem, updateCostItem, deleteCostItem,
+    addCostItem, updateCostItem, deleteCostItem, getVendorCostSummary,
+    addScheduleItem, updateScheduleItem, deleteScheduleItem,
     addVendorPhoto, deleteVendorPhoto,
     getPhotos, addPhoto, updatePhoto, deletePhoto,
     getBudget, updateBudgetTotal, updateBudgetItem, addBudgetItem, deleteBudgetItem,

@@ -157,15 +157,15 @@ App.Budget = (() => {
       </div>
       <div class="form-group">
         <label class="form-label">금액 (원)</label>
-        <input class="form-input" type="number" id="iAmount" value="${item?.amount || ''}" placeholder="예: 20000000">
-        <div style="font-size:12px;color:var(--text-sub);margin-top:6px">2천만 원 → 20000000</div>
+        <input class="form-input" type="text" inputmode="numeric" id="iAmount" value="${item?.amount ? Number(item.amount).toLocaleString('ko-KR') : ''}" placeholder="예: 20,000,000" oninput="App.Util.formatNumberInput(this)">
+        <div style="font-size:12px;color:var(--text-sub);margin-top:6px">2천만 원 → 20,000,000</div>
       </div>`;
   }
 
   function readIncomeItemForm() {
     const name = document.getElementById('iName').value.trim();
     if (!name) { alert('항목 이름을 입력해주세요.'); return null; }
-    return { name, amount: Number(document.getElementById('iAmount').value) || 0 };
+    return { name, amount: App.Util.parseNumberInput('iAmount') };
   }
 
   function openAddItem() {
@@ -213,11 +213,11 @@ App.Budget = (() => {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">계획 예산 (원)</label>
-          <input class="form-input" type="number" id="bBudget" value="${item?.budget || ''}" placeholder="15000000">
+          <input class="form-input" type="text" inputmode="numeric" id="bBudget" value="${item?.budget ? Number(item.budget).toLocaleString('ko-KR') : ''}" placeholder="15,000,000" oninput="App.Util.formatNumberInput(this)">
         </div>
         <div class="form-group">
           <label class="form-label">지출 확정 (원)</label>
-          <input class="form-input" type="number" id="bSpent" value="${item?.spent || ''}" placeholder="0">
+          <input class="form-input" type="text" inputmode="numeric" id="bSpent" value="${item?.spent ? Number(item.spent).toLocaleString('ko-KR') : ''}" placeholder="0" oninput="App.Util.formatNumberInput(this)">
         </div>
       </div>`;
   }
@@ -225,7 +225,7 @@ App.Budget = (() => {
   function readItemForm() {
     const name = document.getElementById('bName').value.trim();
     if (!name) { alert('항목 이름을 입력해주세요.'); return null; }
-    return { name, budget: Number(document.getElementById('bBudget').value) || 0, spent: Number(document.getElementById('bSpent').value) || 0 };
+    return { name, budget: App.Util.parseNumberInput('bBudget'), spent: App.Util.parseNumberInput('bSpent') };
   }
 
   function fmtWon(n) {
