@@ -173,6 +173,11 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .g-side-groom { background: #EEF4FF; color: #4A7EC7; }
 .g-side-bride { background: #FDEEF3; color: #C77B9A; }
 
+.vendor-schedule-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.vendor-schedule-item { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-sub); }
+.vendor-schedule-item span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vendor-schedule-item span:last-child { flex-shrink: 0; font-weight: 500; }
+
 .vendor-photo-strip { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
 .vendor-photo-strip-label { font-size: 11px; color: var(--text-sub); margin-bottom: 8px; display: flex; justify-content: space-between; }
 .vendor-photo-strip-label span { color: var(--primary); cursor: pointer; font-weight: 500; }

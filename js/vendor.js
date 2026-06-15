@@ -156,6 +156,13 @@ App.Vendor = (() => {
          </div>`
       : `<div class="vendor-price">${esc(v.price) || '<span style="color:var(--text-sub);font-size:14px;font-weight:400">금액 미입력</span>'}</div>`;
 
+    // 일정 목록 (등록된 모든 일정을 날짜순으로 표시)
+    const schedules = [...(v.schedules || [])].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+    const scheduleHTML = schedules.length > 0
+      ? `<div class="vendor-schedule-list">${schedules.map(si => `
+          <div class="vendor-schedule-item"><span>📅 ${esc(si.name)}</span><span>${esc(si.date) || '날짜 미정'}</span></div>`).join('')}</div>`
+      : (v.consultDate ? `<div class="vendor-schedule-item"><span>📅 상담일</span><span>${esc(v.consultDate)}</span></div>` : '');
+
     return `
       <div class="vendor-card ${v.confirmed ? 'confirmed' : ''}" onclick="App.Vendor.openDetail('${v.id}')">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
@@ -170,8 +177,8 @@ App.Vendor = (() => {
         <div class="vendor-tags">${(v.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
         <div style="font-size:12px;color:var(--text-sub);margin-bottom:2px">
           ${v.contact ? '📞 ' + esc(v.contact) : ''}
-          ${v.consultDate ? ' &nbsp;📅 ' + esc(v.consultDate) : ''}
         </div>
+        ${scheduleHTML}
         <div class="vendor-photo-strip">
           <div class="vendor-photo-strip-label">
             사진·서류

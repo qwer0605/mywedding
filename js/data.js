@@ -96,11 +96,13 @@ App.Data = (() => {
   }
 
   function save() {
+    _data.lastModified = Date.now();
     try { localStorage.setItem(KEY, JSON.stringify(_data)); }
     catch { alert('저장 공간이 부족합니다. 사진 일부를 삭제해 주세요.'); }
   }
 
   function get() { return _data || load(); }
+  function getLastModified() { return get().lastModified || 0; }
   function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
 
   // Settings
@@ -421,7 +423,8 @@ App.Data = (() => {
     const d = get();
     return { settings: d.settings, timeline: d.timeline, vendors: d.vendors,
              photos: d.photos, budget: d.budget, vendorCategories: d.vendorCategories || DEFAULT.vendorCategories,
-             guests: d.guests || [], honeymoon: d.honeymoon || DEFAULT.honeymoon };
+             guests: d.guests || [], honeymoon: d.honeymoon || DEFAULT.honeymoon,
+             lastModified: d.lastModified || 0 };
   }
 
   function importFromCloud(cloudData) {
@@ -442,7 +445,7 @@ App.Data = (() => {
   }
 
   return {
-    load, get, save, generateId, saveSettings,
+    load, get, save, generateId, saveSettings, getLastModified,
     getVendorCategories, addVendorCategory, renameVendorCategory, deleteVendorCategory,
     getStages, addStage, updateStage, deleteStage,
     addTask, updateTask, toggleTask, deleteTask,

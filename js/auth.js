@@ -36,6 +36,13 @@ App.Auth = (() => {
           showLoginOverlay(true); // 로그아웃 시 앱 가리기
         }
       });
+
+      // 탭이 백그라운드로 전환되거나 닫힐 때 디바운스 없이 즉시 동기화
+      const flushSync = () => { clearTimeout(_saveTimer); saveToCloud(); };
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushSync();
+      });
+      window.addEventListener('pagehide', flushSync);
     } catch (e) {
       console.warn('Firebase 초기화 실패:', e);
     }
@@ -85,7 +92,17 @@ App.Auth = (() => {
     if (!isReady() || !_uid) return;
     try {
       const doc = await _db.doc(`users/${_uid}`).get();
-      if (doc.exists) App.Data.importFromCloud(doc.data());
+      if (!doc.exists) return;
+      const cloudData = doc.data();
+      const cloudModified = cloudData.lastModified || 0;
+      const localModified = App.Data.getLastModified();
+      if (cloudModified > localModified) {
+        // 클라우드가 더 최신 → 로컬을 클라우드 데이터로 갱신
+        App.Data.importFromCloud(cloudData);
+      } else if (localModified > cloudModified) {
+        // 로컬이 더 최신 → 클라우드를 덮어쓰지 않고 즉시 동기화
+        await saveToCloud();
+      }
     } catch (e) { console.warn('클라우드 로드 실패:', e); }
   }
 
