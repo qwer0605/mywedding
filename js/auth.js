@@ -67,15 +67,17 @@ App.Auth = (() => {
   function updateNavUser(user) {
     const el = document.getElementById('navUser');
     if (!el) return;
+    const settingsBtn = `<button class="btn btn-ghost btn-sm" onclick="App.showSettings()" title="설정">⚙️</button>`;
     if (user) {
       el.innerHTML = `
+        ${settingsBtn}
         <div class="nav-user">
           <img src="${user.photoURL || ''}" onerror="this.style.display='none'" class="nav-avatar">
           <span class="nav-username">${user.displayName || user.email || '사용자'}</span>
           <button class="btn btn-ghost btn-sm" onclick="App.Auth.logout()">로그아웃</button>
         </div>`;
     } else {
-      el.innerHTML = `<button class="btn btn-outline btn-sm" onclick="App.Auth.login()">🔑 Google 로그인</button>`;
+      el.innerHTML = `${settingsBtn}<button class="btn btn-outline btn-sm" onclick="App.Auth.login()">🔑 Google 로그인</button>`;
     }
   }
 

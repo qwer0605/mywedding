@@ -4,7 +4,9 @@ App.Budget = (() => {
 
   function render() {
     const { total, items, incomeItems = [] } = App.Data.getBudget();
-    const totalIncome = incomeItems.length > 0 ? incomeItems.reduce((a, i) => a + i.amount, 0) : total;
+    const giftTotal = App.Data.getGuestSummary().giftTotal;
+    const incomeSum = incomeItems.length > 0 ? incomeItems.reduce((a, i) => a + i.amount, 0) : total;
+    const totalIncome = incomeSum + giftTotal;
     const totalSpent = items.reduce((a, i) => a + i.spent, 0);
     const totalBudget = items.reduce((a, i) => a + i.budget, 0);
     const remain = totalIncome - totalSpent;
@@ -40,7 +42,7 @@ App.Budget = (() => {
         수입 내역
         <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="App.Budget.openAddIncome()">+ 추가</button>
       </div>
-      ${incomeItems.length === 0
+      ${(incomeItems.length === 0 && giftTotal === 0)
         ? `<div style="color:var(--text-sub);font-size:13px;padding:10px 0 6px">수입 항목을 추가해 주세요. (본인 저축, 부모님 지원, 축의금 예상 등)</div>`
         : `<div class="income-list">
             ${incomeItems.map(item => `
@@ -50,6 +52,12 @@ App.Budget = (() => {
                 <button class="task-btn" onclick="App.Budget.openEditIncome('${item.id}')">✏️</button>
                 <button class="task-btn" onclick="App.Budget.deleteIncome('${item.id}')">🗑️</button>
               </div>`).join('')}
+            ${giftTotal > 0 ? `
+            <div class="income-row" style="cursor:pointer" onclick="App.showTab('guests')">
+              <span class="income-name">💌 축의금 합계 (${App.Data.getGuests().filter(g => g.gift > 0).length}명)</span>
+              <span class="income-amount">${fmtWon(giftTotal)}</span>
+              <span style="width:64px"></span>
+            </div>` : ''}
             <div class="income-row income-total-row">
               <span class="income-name" style="font-weight:700">합계</span>
               <span class="income-amount v-total" style="font-weight:700">${fmtWon(totalIncome)}</span>

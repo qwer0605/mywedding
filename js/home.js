@@ -13,8 +13,9 @@ App.Home = (() => {
     const today = new Date(); today.setHours(0,0,0,0);
     const d = new Date(dateStr); d.setHours(0,0,0,0);
     const diff = Math.round((d - today) / 86400000);
-    if (diff === 0) return 'D-Day';
-    return diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+    const text = diff === 0 ? 'D-Day' : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+    const urgency = diff <= 0 ? 'danger' : diff <= 3 ? 'urgent' : 'normal';
+    return { text, urgency };
   }
 
   function getUrgentItems() {
@@ -69,9 +70,10 @@ App.Home = (() => {
     const photos = App.Data.getPhotos();
     const budget = App.Data.getBudget();
     const totalSpent = budget.items.reduce((a, i) => a + i.spent, 0);
-    const totalIncome = (budget.incomeItems || []).length > 0
+    const incomeSum = (budget.incomeItems || []).length > 0
       ? (budget.incomeItems || []).reduce((a, i) => a + i.amount, 0)
       : budget.total;
+    const totalIncome = incomeSum + App.Data.getGuestSummary().giftTotal;
     const budgetPct = totalIncome ? Math.round((totalSpent / totalIncome) * 100) : 0;
 
     const dateStr = weddingDate
@@ -114,7 +116,7 @@ App.Home = (() => {
                 <div class="todo-dot"></div>
                 <div style="flex:1">
                   <div style="font-size:13px">${item.label}</div>
-                  <div style="font-size:11px;color:var(--text-sub);margin-top:2px">${item.sub}${item.ddayLabel ? ` · <span style="color:var(--primary);font-weight:600">${item.ddayLabel}</span>` : ''}</div>
+                  <div style="font-size:11px;color:var(--text-sub);margin-top:2px">${item.sub}${item.ddayLabel ? ` · <span style="color:${item.ddayLabel.urgency === 'danger' ? 'var(--danger)' : item.ddayLabel.urgency === 'urgent' ? 'var(--primary)' : 'var(--text-sub)'};font-weight:${item.ddayLabel.urgency === 'normal' ? '500' : '700'}">${item.ddayLabel.text}</span>` : ''}</div>
                 </div>
               </div>`).join('')}
         </div>

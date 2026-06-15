@@ -80,7 +80,9 @@ App.Data = (() => {
         { id: 'bi-7', name: '폐백·이바지', budget: 0, spent: 0 },
         { id: 'bi-8', name: '기타·예비비', budget: 0, spent: 0 },
       ]
-    }
+    },
+    guests: [],
+    honeymoon: { destination: '', startDate: '', endDate: '', memo: '', items: [], costItems: [] }
   };
 
   let _data = null;
@@ -297,6 +299,83 @@ App.Data = (() => {
     _data.budget.incomeItems = (_data.budget.incomeItems || []).filter(i => i.id !== id); save();
   }
 
+  // Guests
+  function getGuests() { return get().guests || []; }
+
+  function addGuest(g) {
+    if (!_data.guests) _data.guests = [];
+    const guest = { id: generateId(), name: g.name || '', side: g.side || 'groom',
+      rsvp: g.rsvp || 'pending', tableNo: g.tableNo || '', gift: Number(g.gift) || 0, memo: g.memo || '' };
+    _data.guests.push(guest); save(); return guest;
+  }
+
+  function updateGuest(id, u) {
+    const g = (_data.guests || []).find(g => g.id === id);
+    if (g) Object.assign(g, u); save();
+  }
+
+  function deleteGuest(id) {
+    _data.guests = (_data.guests || []).filter(g => g.id !== id); save();
+  }
+
+  function getGuestSummary() {
+    const guests = get().guests || [];
+    let attending = 0, pending = 0, absent = 0, giftTotal = 0;
+    for (const g of guests) {
+      if (g.rsvp === 'attending') attending++;
+      else if (g.rsvp === 'absent') absent++;
+      else pending++;
+      giftTotal += g.gift || 0;
+    }
+    return { total: guests.length, attending, pending, absent, giftTotal };
+  }
+
+  // Honeymoon
+  function getHoneymoon() {
+    if (!_data.honeymoon) _data.honeymoon = JSON.parse(JSON.stringify(DEFAULT.honeymoon));
+    return _data.honeymoon;
+  }
+
+  function updateHoneymoonInfo(u) { Object.assign(getHoneymoon(), u); save(); }
+
+  function addHoneymoonItem(item) {
+    const h = getHoneymoon();
+    const hi = { id: generateId(), title: item.title || '', date: item.date || '', memo: item.memo || '' };
+    h.items.push(hi); save(); return hi;
+  }
+
+  function updateHoneymoonItem(itemId, u) {
+    const h = getHoneymoon();
+    const hi = h.items.find(i => i.id === itemId);
+    if (hi) Object.assign(hi, u); save();
+  }
+
+  function deleteHoneymoonItem(itemId) {
+    const h = getHoneymoon();
+    h.items = h.items.filter(i => i.id !== itemId); save();
+  }
+
+  function addHoneymoonCost(item) {
+    const h = getHoneymoon();
+    const ci = { id: generateId(), name: item.name || '', amount: Number(item.amount) || 0, memo: item.memo || '' };
+    h.costItems.push(ci); save(); return ci;
+  }
+
+  function updateHoneymoonCost(itemId, u) {
+    const h = getHoneymoon();
+    const ci = h.costItems.find(i => i.id === itemId);
+    if (ci) Object.assign(ci, u); save();
+  }
+
+  function deleteHoneymoonCost(itemId) {
+    const h = getHoneymoon();
+    h.costItems = h.costItems.filter(i => i.id !== itemId); save();
+  }
+
+  function getHoneymoonCostTotal() {
+    return getHoneymoon().costItems.reduce((s, i) => s + (i.amount || 0), 0);
+  }
+
   // Progress
   function getProgress() {
     const stages = get().timeline;
@@ -331,13 +410,25 @@ App.Data = (() => {
   function exportForCloud() {
     const d = get();
     return { settings: d.settings, timeline: d.timeline, vendors: d.vendors,
-             photos: d.photos, budget: d.budget, vendorCategories: d.vendorCategories || DEFAULT.vendorCategories };
+             photos: d.photos, budget: d.budget, vendorCategories: d.vendorCategories || DEFAULT.vendorCategories,
+             guests: d.guests || [], honeymoon: d.honeymoon || DEFAULT.honeymoon };
   }
 
   function importFromCloud(cloudData) {
     if (!cloudData) return;
     _data = { ...JSON.parse(JSON.stringify(DEFAULT)), ...cloudData };
     localStorage.setItem(KEY, JSON.stringify(_data));
+  }
+
+  // Local backup (JSON export/import)
+  function exportBackup() {
+    return JSON.parse(JSON.stringify(get()));
+  }
+
+  function importBackup(obj) {
+    if (!obj) return;
+    _data = { ...JSON.parse(JSON.stringify(DEFAULT)), ...obj };
+    save();
   }
 
   return {
@@ -352,6 +443,10 @@ App.Data = (() => {
     getPhotos, addPhoto, updatePhoto, deletePhoto,
     getBudget, updateBudgetTotal, updateBudgetItem, addBudgetItem, deleteBudgetItem,
     addIncomeItem, updateIncomeItem, deleteIncomeItem,
-    getProgress, compressImage, exportForCloud, importFromCloud
+    getGuests, addGuest, updateGuest, deleteGuest, getGuestSummary,
+    getHoneymoon, updateHoneymoonInfo,
+    addHoneymoonItem, updateHoneymoonItem, deleteHoneymoonItem,
+    addHoneymoonCost, updateHoneymoonCost, deleteHoneymoonCost, getHoneymoonCostTotal,
+    getProgress, compressImage, exportForCloud, importFromCloud, exportBackup, importBackup
   };
 })();

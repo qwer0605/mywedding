@@ -52,8 +52,10 @@ App.showTab = (tab) => {
   if (tab === 'home') App.Home.render();
   if (tab === 'timeline') App.Timeline.render();
   if (tab === 'vendor') App.Vendor.render();
+  if (tab === 'guests') App.Guests.render();
   if (tab === 'photos') App.Photos.render();
   if (tab === 'budget') App.Budget.render();
+  if (tab === 'honeymoon') App.Honeymoon.render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -103,6 +105,60 @@ App.showSetup = () => {
       App.Home.render();
     }
   });
+};
+
+// ── 설정 모달 (정보 수정 + 데이터 백업) ──
+App.showSettings = () => {
+  App.Modal.show({
+    title: '⚙️ 설정',
+    showConfirm: false,
+    content: `
+      <div class="form-group">
+        <button class="btn btn-outline" style="width:100%" onclick="App.Modal.hide(); App.showSetup();">💍 결혼 정보 수정</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">데이터 백업</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="App.exportBackup()">⬇️ 내보내기 (JSON)</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="document.getElementById('backupFileInput').click()">⬆️ 가져오기</button>
+          <input type="file" id="backupFileInput" accept=".json" style="display:none" onchange="App.importBackup(this)">
+        </div>
+        <div style="font-size:12px;color:var(--text-sub);margin-top:8px">전체 데이터를 JSON 파일로 저장하거나, 백업 파일에서 복원할 수 있어요.</div>
+      </div>
+      <div style="text-align:right;margin-top:12px">
+        <button class="btn btn-ghost" onclick="App.Modal.hide()">닫기</button>
+      </div>`
+  });
+};
+
+App.exportBackup = () => {
+  const data = App.Data.exportBackup();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `mywedding_backup_${today}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+App.importBackup = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('현재 데이터를 백업 파일의 내용으로 덮어씁니다. 계속하시겠어요?')) { input.value = ''; return; }
+      App.Data.importBackup(data);
+      App.Modal.hide();
+      location.reload();
+    } catch {
+      alert('올바른 백업 파일이 아닙니다.');
+    }
+  };
+  reader.readAsText(file);
 };
 
 function esc(str) {
