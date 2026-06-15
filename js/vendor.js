@@ -658,10 +658,7 @@ App.Vendor = (() => {
     return photos.map(p => `
       <div class="modal-photo-item" onclick="App.showImageViewer('${p.data}')">
         <img src="${p.data}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">
-        <div class="photo-overlay">
-          <button onclick="event.stopPropagation();App.Vendor.deletePhoto('${vendorId}','${type}','${p.id}')"
-            style="background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px">🗑️</button>
-        </div>
+        <button class="modal-photo-delete" onclick="event.stopPropagation();App.Vendor.deletePhoto('${vendorId}','${type}','${p.id}')">🗑️</button>
       </div>`).join('');
   }
 
