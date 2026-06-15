@@ -126,11 +126,14 @@ App.Photos = (() => {
     const cat = activeCat === '전체' ? await pickCategory() : activeCat;
     if (!cat) return;
     const files = Array.from(input.files);
+    const failed = [];
     for (const file of files) {
       const data = await App.Data.compressImage(file);
+      if (!data) { failed.push(file.name); continue; }
       App.Data.addPhoto(cat, data, '');
     }
     render(); App.Home.render();
+    if (failed.length) alert(`다음 파일을 처리할 수 없습니다:\n${failed.join('\n')}\n\n다른 형식(JPEG/PNG)으로 다시 시도해주세요.`);
   }
 
   function pickCategory() {

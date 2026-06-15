@@ -665,17 +665,22 @@ App.Vendor = (() => {
   // 목록 카드에서 바로 업로드
   async function quickUpload(vendorId, input) {
     const files = Array.from(input.files);
+    const failed = [];
     for (const file of files) {
       const data = await App.Data.compressImage(file);
+      if (!data) { failed.push(file.name); continue; }
       App.Data.addVendorPhoto(vendorId, 'portfolio', data, file.name);
     }
     render();
+    if (failed.length) alert(`다음 파일을 처리할 수 없습니다:\n${failed.join('\n')}\n\n다른 형식(JPEG/PNG)으로 다시 시도해주세요.`);
   }
 
   async function uploadPhoto(vendorId, type, input) {
     const files = Array.from(input.files);
+    const failed = [];
     for (const file of files) {
       const data = await App.Data.compressImage(file);
+      if (!data) { failed.push(file.name); continue; }
       App.Data.addVendorPhoto(vendorId, type, data, file.name);
     }
     const v = App.Data.getVendors().find(v => v.id === vendorId);
@@ -684,6 +689,7 @@ App.Vendor = (() => {
     if (portfolioEl) portfolioEl.innerHTML = renderPhotoGrid(v.portfolio, vendorId, 'portfolio');
     if (docsEl) docsEl.innerHTML = renderPhotoGrid(v.docs, vendorId, 'docs');
     render();
+    if (failed.length) alert(`다음 파일을 처리할 수 없습니다:\n${failed.join('\n')}\n\n다른 형식(JPEG/PNG)으로 다시 시도해주세요.`);
   }
 
   function deletePhoto(vendorId, type, photoId) {

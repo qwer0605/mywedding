@@ -397,12 +397,26 @@ App.Data = (() => {
   }
 
   // Image compression (500px, 40% quality ≈ 10-15KB per image)
+  // 실패 시(지원하지 않는 형식 등) null을 반환한다.
   async function compressImage(file) {
+    // 아이폰 HEIC/HEIF 사진은 대부분 브라우저가 디코딩하지 못하므로 먼저 JPEG로 변환
+    let srcFile = file;
+    const isHeic = /\.(heic|heif)$/i.test(file.name || '') || /^image\/hei(c|f)/i.test(file.type || '');
+    if (isHeic && typeof heic2any === 'function') {
+      try {
+        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+        srcFile = Array.isArray(converted) ? converted[0] : converted;
+      } catch (e) {
+        // 변환 실패 시 원본 파일로 계속 진행 -> 아래에서 디코딩 실패 시 null 처리
+      }
+    }
+
     return new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
+          if (!img.naturalWidth || !img.naturalHeight) { resolve(null); return; }
           const MAX = 500;
           let w = img.width, h = img.height;
           if (w > MAX) { h = Math.round((MAX / w) * h); w = MAX; }
@@ -412,9 +426,11 @@ App.Data = (() => {
           c.getContext('2d').drawImage(img, 0, 0, w, h);
           resolve(c.toDataURL('image/jpeg', 0.40));
         };
+        img.onerror = () => resolve(null);
         img.src = e.target.result;
       };
-      reader.readAsDataURL(file);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(srcFile);
     });
   }
 
