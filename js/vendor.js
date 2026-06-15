@@ -52,13 +52,37 @@ App.Vendor = (() => {
         ${activeCat === '전체' ? '전체 업체 목록' : esc(activeCat) + ' 목록'}
         <span style="font-size:13px;color:var(--text-sub);font-weight:400">${filtered.length}곳</span>
       </div>
-      <div class="vendor-grid">
-        ${filtered.map(v => renderCard(v)).join('')}
-        <button class="add-vendor-btn" onclick="App.Vendor.openAdd()">
-          <span style="font-size:28px">＋</span>업체 추가
-        </button>
-      </div>
+      ${activeStatus === '전체' ? renderGroupedVendors(filtered) : renderVendorGrid(filtered, true)}
     `;
+  }
+
+  // 상태 필터가 '전체'일 때: 확정 → 검토중 → 상담중 → 계약완료 순으로 그룹 표시
+  const STATUS_GROUPS = [
+    { label: '⭐ 확정',    match: v => v.confirmed },
+    { label: '🔍 검토중',  match: v => !v.confirmed && (v.status || 'review') === 'review' },
+    { label: '📞 상담중',  match: v => !v.confirmed && v.status === 'contact' },
+    { label: '✓ 계약완료', match: v => !v.confirmed && v.status === 'done' },
+  ];
+
+  function renderGroupedVendors(vendors) {
+    const groups = STATUS_GROUPS.map(g => ({ label: g.label, list: vendors.filter(g.match) }))
+      .filter(g => g.list.length > 0);
+
+    return `
+      ${groups.map(g => `
+        <div class="vendor-group-label">${g.label} <span class="cat-tab-count">${g.list.length}</span></div>
+        ${renderVendorGrid(g.list)}`).join('')}
+      ${renderVendorGrid([], true)}`;
+  }
+
+  function renderVendorGrid(vendors, showAddBtn) {
+    return `
+      <div class="vendor-grid">
+        ${vendors.map(v => renderCard(v)).join('')}
+        ${showAddBtn ? `<button class="add-vendor-btn" onclick="App.Vendor.openAdd()">
+          <span style="font-size:28px">＋</span>업체 추가
+        </button>` : ''}
+      </div>`;
   }
 
   function renderCategoryOverview(vendors, cats) {
@@ -186,7 +210,7 @@ App.Vendor = (() => {
           </div>
           <div class="vendor-photo-row">
             ${thumbs.map(p => `
-              <div class="vendor-thumb">
+              <div class="vendor-thumb" onclick="event.stopPropagation();App.showImageViewer('${p.data}')">
                 <img src="${p.data}" style="width:100%;height:100%;object-fit:cover">
               </div>`).join('')}
             <label class="vendor-thumb-add" onclick="event.stopPropagation()" title="사진 추가">
