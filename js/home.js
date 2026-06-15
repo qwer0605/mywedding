@@ -37,7 +37,10 @@ App.Home = (() => {
     const photos = App.Data.getPhotos();
     const budget = App.Data.getBudget();
     const totalSpent = budget.items.reduce((a, i) => a + i.spent, 0);
-    const budgetPct = budget.total ? Math.round((totalSpent / budget.total) * 100) : 0;
+    const totalIncome = (budget.incomeItems || []).length > 0
+      ? (budget.incomeItems || []).reduce((a, i) => a + i.amount, 0)
+      : budget.total;
+    const budgetPct = totalIncome ? Math.round((totalSpent / totalIncome) * 100) : 0;
 
     const dateStr = weddingDate
       ? new Date(weddingDate).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' })

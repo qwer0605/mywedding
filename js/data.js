@@ -69,6 +69,7 @@ App.Data = (() => {
     photos: [],
     budget: {
       total: 0,
+      incomeItems: [],
       items: [
         { id: 'bi-1', name: '예식장', budget: 0, spent: 0 },
         { id: 'bi-2', name: '스드메', budget: 0, spent: 0 },
@@ -247,6 +248,22 @@ App.Data = (() => {
 
   function deleteBudgetItem(id) { _data.budget.items = _data.budget.items.filter(i => i.id !== id); save(); }
 
+  // Income Items
+  function addIncomeItem(name, amount) {
+    if (!_data.budget.incomeItems) _data.budget.incomeItems = [];
+    const item = { id: generateId(), name, amount: Number(amount) || 0 };
+    _data.budget.incomeItems.push(item); save(); return item;
+  }
+
+  function updateIncomeItem(id, u) {
+    const item = (_data.budget.incomeItems || []).find(i => i.id === id);
+    if (item) Object.assign(item, u); save();
+  }
+
+  function deleteIncomeItem(id) {
+    _data.budget.incomeItems = (_data.budget.incomeItems || []).filter(i => i.id !== id); save();
+  }
+
   // Progress
   function getProgress() {
     const stages = get().timeline;
@@ -300,6 +317,7 @@ App.Data = (() => {
     addVendorPhoto, deleteVendorPhoto,
     getPhotos, addPhoto, updatePhoto, deletePhoto,
     getBudget, updateBudgetTotal, updateBudgetItem, addBudgetItem, deleteBudgetItem,
+    addIncomeItem, updateIncomeItem, deleteIncomeItem,
     getProgress, compressImage, exportForCloud, importFromCloud
   };
 })();

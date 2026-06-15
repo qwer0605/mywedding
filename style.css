@@ -158,6 +158,22 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .add-photo-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text-sub); }
 
+/* ── PHOTO COMPARE MODE ── */
+.compare-hint { background: var(--primary-light); color: var(--primary-dark); font-size: 13px; padding: 10px 16px; border-radius: 10px; margin-bottom: 16px; }
+.photo-item.selected { outline: 3px solid var(--primary); }
+.photo-select-badge { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.85); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--primary); font-weight: 700; }
+.photo-select-badge.checked { background: var(--primary); border-color: var(--primary); color: white; }
+.photo-cat-tag { position: absolute; bottom: 8px; left: 8px; font-size: 11px; background: rgba(255,255,255,0.9); color: #333; border-radius: 20px; padding: 3px 10px; }
+.compare-bar { position: sticky; bottom: 16px; margin-top: 16px; background: white; border: 1px solid var(--border); border-radius: 100px; padding: 10px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); font-size: 13px; color: var(--text-sub); justify-content: center; flex-wrap: wrap; }
+
+.compare-view-grid { display: grid; gap: 14px; }
+.compare-view-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.compare-view-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.compare-view-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+.compare-view-item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; cursor: zoom-in; }
+.compare-view-cat { font-size: 12px; font-weight: 600; color: var(--primary); margin-top: 8px; }
+.compare-view-memo { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; }
+
 /* ── BUDGET ── */
 .budget-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 22px; }
 .budget-stat { background: white; border-radius: 16px; padding: 22px; border: 1px solid var(--border); text-align: center; }
@@ -183,6 +199,15 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .danger-amt { font-size: 13px; color: var(--danger); font-weight: 600; }
 .warning-box { background: #FFF8E6; border: 1px solid #F0D890; border-radius: 12px; padding: 14px 16px; font-size: 13px; color: #7A5F1A; display: flex; gap: 10px; align-items: flex-start; }
 
+/* ── INCOME LIST ── */
+.income-list { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 4px; }
+.income-row { display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid #F8F4F0; }
+.income-row:last-child { border-bottom: none; }
+.income-name { flex: 1; font-size: 14px; }
+.income-amount { font-size: 14px; font-weight: 600; color: var(--success); min-width: 100px; text-align: right; }
+.income-total-row { background: var(--bg); }
+.income-total-row .income-amount { font-size: 15px; }
+
 /* ── FORMS ── */
 .form-group { margin-bottom: 16px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -196,6 +221,7 @@ select.form-input { cursor: pointer; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
 .modal-overlay.open { display: flex; }
 .modal-box { background: white; border-radius: 20px; width: 100%; max-width: 560px; box-shadow: 0 20px 60px rgba(0,0,0,0.18); margin: auto; }
+.modal-box.wide { max-width: 920px; }
 .modal-head { padding: 22px 24px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .modal-title { font-size: 19px; font-weight: 700; }
 .modal-close { background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -272,4 +298,5 @@ select.form-input { cursor: pointer; }
   .form-row { grid-template-columns: 1fr; }
   .dday-number { font-size: 64px; }
   .modal-photo-grid { grid-template-columns: repeat(3, 1fr); }
+  .compare-view-grid.cols-3, .compare-view-grid.cols-4 { grid-template-columns: 1fr 1fr; }
 }

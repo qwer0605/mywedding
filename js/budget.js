@@ -3,25 +3,26 @@ window.App = window.App || {};
 App.Budget = (() => {
 
   function render() {
-    const { total, items } = App.Data.getBudget();
+    const { total, items, incomeItems = [] } = App.Data.getBudget();
+    const totalIncome = incomeItems.length > 0 ? incomeItems.reduce((a, i) => a + i.amount, 0) : total;
     const totalSpent = items.reduce((a, i) => a + i.spent, 0);
     const totalBudget = items.reduce((a, i) => a + i.budget, 0);
-    const remain = total - totalSpent;
-    const pct = total ? Math.min(Math.round((totalSpent / total) * 100), 100) : 0;
+    const remain = totalIncome - totalSpent;
+    const pct = totalIncome ? Math.min(Math.round((totalSpent / totalIncome) * 100), 100) : 0;
 
     document.getElementById('budgetScreen').innerHTML = `
       <div class="page-header">
         <div class="page-title">예산 관리</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="App.Budget.openSetTotal()">총예산 설정</button>
-          <button class="btn btn-primary btn-sm" onclick="App.Budget.openAddItem()">+ 항목 추가</button>
+          <button class="btn btn-ghost btn-sm" onclick="App.Budget.openAddIncome()">+ 수입 추가</button>
+          <button class="btn btn-primary btn-sm" onclick="App.Budget.openAddItem()">+ 지출 항목 추가</button>
         </div>
       </div>
 
       <div class="budget-summary">
         <div class="budget-stat">
-          <div class="stat-label">총 예산</div>
-          <div class="stat-value v-total">${fmtWon(total)}</div>
+          <div class="stat-label">총 수입</div>
+          <div class="stat-value v-total">${fmtWon(totalIncome)}</div>
         </div>
         <div class="budget-stat">
           <div class="stat-label">지출 확정</div>
@@ -34,6 +35,29 @@ App.Budget = (() => {
           <div class="stat-unit">${remain < 0 ? '⚠️ 초과' : '잔액'}</div>
         </div>
       </div>
+
+      <div class="section-label" style="margin-top:20px">
+        수입 내역
+        <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="App.Budget.openAddIncome()">+ 추가</button>
+      </div>
+      ${incomeItems.length === 0
+        ? `<div style="color:var(--text-sub);font-size:13px;padding:10px 0 6px">수입 항목을 추가해 주세요. (본인 저축, 부모님 지원, 축의금 예상 등)</div>`
+        : `<div class="income-list">
+            ${incomeItems.map(item => `
+              <div class="income-row">
+                <span class="income-name">${esc(item.name)}</span>
+                <span class="income-amount">${fmtWon(item.amount)}</span>
+                <button class="task-btn" onclick="App.Budget.openEditIncome('${item.id}')">✏️</button>
+                <button class="task-btn" onclick="App.Budget.deleteIncome('${item.id}')">🗑️</button>
+              </div>`).join('')}
+            <div class="income-row income-total-row">
+              <span class="income-name" style="font-weight:700">합계</span>
+              <span class="income-amount v-total" style="font-weight:700">${fmtWon(totalIncome)}</span>
+              <span style="width:64px"></span>
+            </div>
+          </div>`}
+
+      <div class="section-label" style="margin-top:20px">지출 항목</div>
 
       <div class="budget-table-wrap">
         <table class="budget-table">
@@ -74,6 +98,7 @@ App.Budget = (() => {
               <td class="${remain < 0 ? 'danger-amt' : 'remain-amt'}">${fmtWon(Math.abs(remain))}${remain < 0 ? ' 초과' : ''}</td>
               <td colspan="2">
                 <div class="bar-wrap"><div class="bar-fill ${remain < 0 ? 'over' : ''}" style="width:${pct}%"></div></div>
+                <div style="font-size:11px;color:var(--text-sub);margin-top:3px">수입 대비 ${pct}%</div>
               </td>
             </tr>
           </tbody>
@@ -90,22 +115,57 @@ App.Budget = (() => {
     `;
   }
 
-  function openSetTotal() {
-    const { total } = App.Data.getBudget();
+  function openAddIncome() {
     App.Modal.show({
-      title: '총 예산 설정',
-      content: `
-        <div class="form-group">
-          <label class="form-label">총 예산 (원)</label>
-          <input class="form-input" type="number" id="budgetTotal" value="${total || ''}" placeholder="예: 50000000">
-          <div style="font-size:12px;color:var(--text-sub);margin-top:6px">5천만 원 → 50000000</div>
-        </div>`,
+      title: '수입 항목 추가',
+      content: incomeItemForm(),
+      confirmText: '추가',
       onConfirm: () => {
-        const v = Number(document.getElementById('budgetTotal').value);
-        App.Data.updateBudgetTotal(v);
+        const v = readIncomeItemForm(); if (!v) return;
+        App.Data.addIncomeItem(v.name, v.amount);
         App.Modal.hide(); render(); App.Home.render();
       }
     });
+  }
+
+  function openEditIncome(id) {
+    const item = (App.Data.getBudget().incomeItems || []).find(i => i.id === id);
+    if (!item) return;
+    App.Modal.show({
+      title: '수입 항목 편집',
+      content: incomeItemForm(item),
+      confirmText: '저장',
+      onConfirm: () => {
+        const v = readIncomeItemForm(); if (!v) return;
+        App.Data.updateIncomeItem(id, v);
+        App.Modal.hide(); render(); App.Home.render();
+      }
+    });
+  }
+
+  function deleteIncome(id) {
+    const item = (App.Data.getBudget().incomeItems || []).find(i => i.id === id);
+    if (!confirm(`"${item?.name}" 수입 항목을 삭제하시겠어요?`)) return;
+    App.Data.deleteIncomeItem(id); render(); App.Home.render();
+  }
+
+  function incomeItemForm(item) {
+    return `
+      <div class="form-group">
+        <label class="form-label">항목 이름 *</label>
+        <input class="form-input" id="iName" value="${esc(item?.name || '')}" placeholder="예: 본인 저축, 부모님 지원">
+      </div>
+      <div class="form-group">
+        <label class="form-label">금액 (원)</label>
+        <input class="form-input" type="number" id="iAmount" value="${item?.amount || ''}" placeholder="예: 20000000">
+        <div style="font-size:12px;color:var(--text-sub);margin-top:6px">2천만 원 → 20000000</div>
+      </div>`;
+  }
+
+  function readIncomeItemForm() {
+    const name = document.getElementById('iName').value.trim();
+    if (!name) { alert('항목 이름을 입력해주세요.'); return null; }
+    return { name, amount: Number(document.getElementById('iAmount').value) || 0 };
   }
 
   function openAddItem() {
@@ -179,5 +239,5 @@ App.Budget = (() => {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  return { render, openSetTotal, openAddItem, openEditItem, deleteItem };
+  return { render, openAddIncome, openEditIncome, deleteIncome, openAddItem, openEditItem, deleteItem };
 })();

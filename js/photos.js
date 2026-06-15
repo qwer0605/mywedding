@@ -3,6 +3,8 @@ window.App = window.App || {};
 App.Photos = (() => {
   const CATEGORIES = ['전체', '드레스', '헤어·메이크업', '꽃장식', '촬영 스타일', '식장 분위기', '기타'];
   let activeCat = '전체';
+  let compareMode = false;
+  let selectedIds = [];
 
   function render() {
     const photos = App.Data.getPhotos();
@@ -11,15 +13,23 @@ App.Photos = (() => {
     document.getElementById('photosScreen').innerHTML = `
       <div class="page-header">
         <div class="page-title">참고사진</div>
-        <label class="btn btn-primary btn-sm" style="cursor:pointer">
-          + 사진 추가
-          <input type="file" accept="image/*" multiple style="display:none" onchange="App.Photos.upload(this)">
-        </label>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm ${compareMode ? 'btn-primary' : 'btn-outline'}" onclick="App.Photos.toggleCompareMode()">
+            ${compareMode ? '✕ 비교 종료' : '🔍 비교하기'}
+          </button>
+          ${!compareMode ? `
+          <label class="btn btn-primary btn-sm" style="cursor:pointer">
+            + 사진 추가
+            <input type="file" accept="image/*" multiple style="display:none" onchange="App.Photos.upload(this)">
+          </label>` : ''}
+        </div>
       </div>
 
       <div class="cat-tabs mb-20">
         ${CATEGORIES.map(c => `<button class="cat-tab ${c === activeCat ? 'active' : ''}" onclick="App.Photos.setCategory('${c}')">${c}</button>`).join('')}
       </div>
+
+      ${compareMode ? `<div class="compare-hint">비교할 사진을 2~4장 선택한 후, 아래의 "비교 보기"를 눌러주세요.</div>` : ''}
 
       ${filtered.length === 0
         ? `<div class="empty-state">
@@ -29,16 +39,27 @@ App.Photos = (() => {
           </div>`
         : `<div class="photo-grid">
             ${filtered.map(renderPhotoItem).join('')}
-            <label class="add-photo-btn" style="cursor:pointer">
+            ${!compareMode ? `<label class="add-photo-btn" style="cursor:pointer">
               <span style="font-size:26px">＋</span>사진 추가
               <input type="file" accept="image/*" multiple style="display:none" onchange="App.Photos.upload(this)">
-            </label>
+            </label>` : ''}
           </div>`
       }
+
+      ${compareMode ? renderCompareBar() : ''}
     `;
   }
 
   function renderPhotoItem(p) {
+    if (compareMode) {
+      const selected = selectedIds.includes(p.id);
+      return `
+        <div class="photo-item ${selected ? 'selected' : ''}" onclick="App.Photos.toggleSelect('${p.id}')">
+          <img src="${p.data}" style="width:100%;height:100%;object-fit:cover">
+          <div class="photo-select-badge ${selected ? 'checked' : ''}">${selected ? '✓' : ''}</div>
+          <div class="photo-cat-tag">${esc(p.category)}</div>
+        </div>`;
+    }
     return `
       <div class="photo-item" onclick="App.Photos.openDetail('${p.id}')">
         <img src="${p.data}" style="width:100%;height:100%;object-fit:cover">
@@ -49,6 +70,54 @@ App.Photos = (() => {
           </div>
         </div>
       </div>`;
+  }
+
+  function renderCompareBar() {
+    return `
+      <div class="compare-bar">
+        <span>${selectedIds.length}장 선택됨 (최대 4장)</span>
+        <button class="btn btn-ghost btn-sm" onclick="App.Photos.clearSelection()">선택 해제</button>
+        <button class="btn btn-primary btn-sm" ${selectedIds.length < 2 ? 'disabled' : ''} onclick="App.Photos.openCompareView()">비교 보기 (${selectedIds.length})</button>
+      </div>`;
+  }
+
+  function toggleCompareMode() {
+    compareMode = !compareMode;
+    selectedIds = [];
+    render();
+  }
+
+  function toggleSelect(id) {
+    const idx = selectedIds.indexOf(id);
+    if (idx >= 0) { selectedIds.splice(idx, 1); render(); return; }
+    if (selectedIds.length >= 4) { alert('최대 4장까지 선택할 수 있어요.'); return; }
+    selectedIds.push(id);
+    render();
+  }
+
+  function clearSelection() {
+    selectedIds = [];
+    render();
+  }
+
+  function openCompareView() {
+    const photos = App.Data.getPhotos();
+    const selected = selectedIds.map(id => photos.find(p => p.id === id)).filter(Boolean);
+    if (selected.length < 2) return;
+    App.Modal.show({
+      title: `사진 비교 (${selected.length}장)`,
+      showConfirm: false,
+      wide: true,
+      content: `
+        <div class="compare-view-grid cols-${selected.length}">
+          ${selected.map(p => `
+            <div class="compare-view-item">
+              <img src="${p.data}" onclick="App.showImageViewer('${p.data}')">
+              <div class="compare-view-cat">${esc(p.category)}</div>
+              ${p.memo ? `<div class="compare-view-memo">${esc(p.memo)}</div>` : ''}
+            </div>`).join('')}
+        </div>`
+    });
   }
 
   function setCategory(cat) { activeCat = cat; render(); }
@@ -78,8 +147,8 @@ App.Photos = (() => {
         confirmText: '선택',
         onConfirm: () => {
           const cat = document.getElementById('photoCat').value;
-          App.Modal.hide();
           resolve(cat);
+          App.Modal.hide();
         }
       });
       // Override hide to resolve null
@@ -132,5 +201,6 @@ App.Photos = (() => {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  return { render, setCategory, upload, openDetail, saveDetail, deletePhoto };
+  return { render, setCategory, upload, openDetail, saveDetail, deletePhoto,
+           toggleCompareMode, toggleSelect, clearSelection, openCompareView };
 })();

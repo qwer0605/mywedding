@@ -5,7 +5,7 @@ App.Modal = (() => {
   const overlay = () => document.getElementById('modalOverlay');
   const box = () => document.getElementById('modalBox');
 
-  function show({ title, content, onConfirm, confirmText = '저장', showConfirm = true }) {
+  function show({ title, content, onConfirm, confirmText = '저장', showConfirm = true, wide = false }) {
     box().innerHTML = `
       <div class="modal-head">
         <div class="modal-title">${title}</div>
@@ -18,6 +18,7 @@ App.Modal = (() => {
           <button class="btn btn-primary" id="modalConfirmBtn">${confirmText}</button>
         </div>` : ''}
     `;
+    box().classList.toggle('wide', wide);
     overlay().classList.add('open');
     if (onConfirm) document.getElementById('modalConfirmBtn').onclick = onConfirm;
     overlay().onclick = e => { if (e.target === overlay()) hide(); };
@@ -25,6 +26,7 @@ App.Modal = (() => {
 
   function hide() {
     overlay().classList.remove('open');
+    box().classList.remove('wide');
     box().innerHTML = '';
   }
 

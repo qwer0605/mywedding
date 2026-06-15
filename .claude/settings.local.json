@@ -26,7 +26,9 @@
       "WebFetch(domain:www.hwst.co.kr)",
       "Bash(git --version)",
       "Bash(gh --version)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "WebFetch(domain:qwer0605.github.io)",
+      "Bash(gh repo *)"
     ]
   }
 }
