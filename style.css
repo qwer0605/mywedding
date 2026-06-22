@@ -152,6 +152,7 @@ body { font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; backgroun
 .s-review { background: #FFF8E6; color: var(--warning); }
 .s-done { background: #EDFAEC; color: var(--success); }
 .s-contact { background: #EEF4FF; color: #4A7EC7; }
+.s-rejected { background: #F3F0ED; color: #999; }
 
 .vendor-card.confirmed { border-color: var(--primary); background: var(--primary-light); }
 .confirm-star { border: none; background: transparent; font-size: 16px; line-height: 1; padding: 0; cursor: pointer; opacity: 0.3; filter: grayscale(1); transition: all 0.15s; }
@@ -338,8 +339,12 @@ select.form-input { cursor: pointer; }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .navbar { padding: 0 16px; }
-  .nav-tab { padding: 6px 10px; font-size: 12px; }
+  .navbar { padding: 8px 12px; height: auto; flex-wrap: wrap; gap: 6px; }
+  .logo { font-size: 15px; }
+  .nav-tabs { order: 3; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; padding-bottom: 2px; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { padding: 6px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  #navUser { order: 2; }
   .screen { padding: 16px; }
   .home-grid { grid-template-columns: 1fr; }
   .quick-grid { grid-template-columns: repeat(2, 1fr); }
@@ -350,4 +355,7 @@ select.form-input { cursor: pointer; }
   .dday-number { font-size: 64px; }
   .modal-photo-grid { grid-template-columns: repeat(3, 1fr); }
   .compare-view-grid.cols-3, .compare-view-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  .cat-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { white-space: nowrap; flex-shrink: 0; }
 }

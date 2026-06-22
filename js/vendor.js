@@ -2,9 +2,10 @@ window.App = window.App || {};
 
 App.Vendor = (() => {
   const STATUS_MAP = {
-    review:  { label: '🔍 검토중',   cls: 's-review' },
-    done:    { label: '✓ 계약완료', cls: 's-done' },
-    contact: { label: '📞 상담예정', cls: 's-contact' }
+    review:   { label: '🔍 검토중',   cls: 's-review' },
+    done:     { label: '✓ 계약완료', cls: 's-done' },
+    contact:  { label: '📞 상담예정', cls: 's-contact' },
+    rejected: { label: '✕ 계약안함', cls: 's-rejected' }
   };
   let activeCat = '전체';
   let activeStatus = '전체';
@@ -21,7 +22,7 @@ App.Vendor = (() => {
     const filtered = activeStatus === '전체' ? catFiltered : catFiltered.filter(v => (v.status || 'review') === activeStatus);
     const sameCat = activeCat !== '전체' && catFiltered.length >= 2;
 
-    const counts = { review: 0, contact: 0, done: 0 };
+    const counts = { review: 0, contact: 0, done: 0, rejected: 0 };
     catFiltered.forEach(v => { counts[v.status || 'review']++; });
 
     document.getElementById('vendorScreen').innerHTML = `
@@ -44,6 +45,7 @@ App.Vendor = (() => {
         <button class="cat-tab ${activeStatus === 'review' ? 'active' : ''}" onclick="App.Vendor.setStatus('review')">🔍 검토중 <span class="cat-tab-count">${counts.review}</span></button>
         <button class="cat-tab ${activeStatus === 'contact' ? 'active' : ''}" onclick="App.Vendor.setStatus('contact')">📞 상담예정 <span class="cat-tab-count">${counts.contact}</span></button>
         <button class="cat-tab ${activeStatus === 'done' ? 'active' : ''}" onclick="App.Vendor.setStatus('done')">✓ 계약완료 <span class="cat-tab-count">${counts.done}</span></button>
+        <button class="cat-tab ${activeStatus === 'rejected' ? 'active' : ''}" onclick="App.Vendor.setStatus('rejected')">✕ 계약안함 <span class="cat-tab-count">${counts.rejected}</span></button>
       </div>
 
       ${sameCat ? renderCompare(catFiltered) : ''}
@@ -62,6 +64,7 @@ App.Vendor = (() => {
     { label: '🔍 검토중',  match: v => !v.confirmed && (v.status || 'review') === 'review' },
     { label: '📞 상담중',  match: v => !v.confirmed && v.status === 'contact' },
     { label: '✓ 계약완료', match: v => !v.confirmed && v.status === 'done' },
+    { label: '✕ 계약안함', match: v => !v.confirmed && v.status === 'rejected' },
   ];
 
   function renderGroupedVendors(vendors) {
@@ -736,9 +739,10 @@ App.Vendor = (() => {
         <div class="form-group">
           <label class="form-label">상태</label>
           <select class="form-input" id="vStatus">
-            <option value="review"  ${!v || v.status === 'review'  ? 'selected' : ''}>🔍 검토중</option>
-            <option value="contact" ${v && v.status === 'contact'  ? 'selected' : ''}>📞 상담예정</option>
-            <option value="done"    ${v && v.status === 'done'     ? 'selected' : ''}>✓ 계약완료</option>
+            <option value="review"   ${!v || v.status === 'review'   ? 'selected' : ''}>🔍 검토중</option>
+            <option value="contact"  ${v && v.status === 'contact'  ? 'selected' : ''}>📞 상담예정</option>
+            <option value="done"     ${v && v.status === 'done'     ? 'selected' : ''}>✓ 계약완료</option>
+            <option value="rejected" ${v && v.status === 'rejected' ? 'selected' : ''}>✕ 계약안함</option>
           </select>
         </div>
       </div>
